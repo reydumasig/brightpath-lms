@@ -1025,8 +1025,8 @@ const { useState, useEffect, useMemo, useRef, useCallback } = React;
 // All calls are fire-and-forget (non-blocking). The UI updates locally first,
 // then syncs to the DB in the background. Errors are logged, never thrown.
 // ─────────────────────────────────────────────────────────────────────────────
-const _BP_SUPABASE_URL  = "https://memcdxfldbytydwnuwps.supabase.co";
-const _BP_SUPABASE_ANON = "sb_publishable_GaygIwGGNi82kgXV7G7AUg_73z7dwZU";
+const _BP_SUPABASE_URL  = "https://iwkwtduribxfazkyvbry.supabase.co";
+const _BP_SUPABASE_ANON = "sb_publishable_6bcmtKhQdh0s2azq27JzFQ_8fCIRynB";
 const _sb = window.supabase.createClient(_BP_SUPABASE_URL, _BP_SUPABASE_ANON);
 
 const BPBackend = {
@@ -1833,6 +1833,7 @@ Object.assign(window, { FadeIn, BPLogo, Background, Header, GlassCard, GlassButt
 const GOOGLE_CLIENT_ID = "1011406832233-gg1o0slnva79dem8m8ukei0ovi2f2tsi.apps.googleusercontent.com";
 
 const ALLOWED_DOMAINS = ["brightpath-mn.com", "s360team.com"];
+const ADMIN_EMAILS    = ["rey@s360team.com", "admin@brightpath-mn.com", "admin@s360team.com"];
 
 function LoginScreen({ onAuth }) {
   const [err, setErr]       = useState("");
@@ -1863,7 +1864,7 @@ function LoginScreen({ onAuth }) {
       window.google?.accounts?.id?.cancel?.();
       return;
     }
-    const isAdmin = email.startsWith("admin@");
+    const isAdmin = ADMIN_EMAILS.includes(email) || email.startsWith("admin@");
     onAuth({
       email,
       name:    payload.name    || email,
@@ -3912,8 +3913,15 @@ function App() {
     try {
       const session = JSON.parse(saved);
       if (!session?.email || !session?.role) { localStorage.removeItem(BP_SESSION_KEY); setDbReady(true); return; }
+      // Correct stale role — admin emails always get admin regardless of what was cached
+      if (ADMIN_EMAILS.includes(session.email) || session.email.startsWith("admin@")) {
+        session.role = "admin";
+        localStorage.setItem(BP_SESSION_KEY, JSON.stringify(session));
+      }
       setAuth(session);
       setTweak("role", session.role);
+      // Ensure learner row exists (handles returning users on new devices)
+      BPBackend.upsertLearner({ email: session.email, name: session.name, picture: session.picture, role: session.role });
       // Fetch this user's progress from DB
       BPBackend.fetchProgress(session.email).then(dbProg => {
         if (dbProg && Object.keys(dbProg).length > 0) {

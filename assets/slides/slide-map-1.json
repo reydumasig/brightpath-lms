@@ -1,0 +1,47 @@
+{
+  "m01": {
+    "1": [
+      "assets/slides/m01/image1.png"
+    ],
+    "2": [
+      "assets/slides/m01/image1.png",
+      "assets/slides/m01/image2.png"
+    ],
+    "3": [
+      "assets/slides/m01/image1.png"
+    ]
+  },
+  "m02": {
+    "1": [
+      "assets/slides/m02/image6.png",
+      "assets/slides/m02/image5.png"
+    ],
+    "2": [
+      "assets/slides/m02/image7.png"
+    ],
+    "3": [
+      "assets/slides/m02/image9.png",
+      "assets/slides/m02/image8.png"
+    ],
+    "4": [
+      "assets/slides/m02/image10.png"
+    ],
+    "5": [
+      "assets/slides/m02/image12.png",
+      "assets/slides/m02/image11.png"
+    ],
+    "6": [
+      "assets/slides/m02/image13.png"
+    ]
+  },
+  "m03": {
+    "1": [
+      "assets/slides/m03/image6.png",
+      "assets/slides/m03/image5.png"
+    ],
+    "4": [
+      "assets/slides/m03/image8.png",
+      "assets/slides/m03/image7.png"
+    ]
+  }
+}

@@ -1,0 +1,4132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>BrightPath Learn — LMS</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  /* ─── Tokens ────────────────────────────────────────────────────────── */
+  :root{
+    --bp-serif: "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
+    --bp-sans:  "DM Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --bp-mono:  "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    --bp-navy-900: #07182b;
+    --bp-navy-800: #0a2540;
+    --bp-navy-700: #11365e;
+    --bp-accent:   #FFD200;
+    --bp-accent-dark: #e6bd00;
+    --bp-cream:    #faf8f3;
+    --bp-text:     #fff;
+    --bp-text-soft: rgba(255,255,255,.78);
+    --bp-text-mute: rgba(255,255,255,.58);
+    --bp-text-dim:  rgba(255,255,255,.4);
+
+    --bp-glass-op: 0.10;
+    --bp-glass-bg: rgba(255,255,255, var(--bp-glass-op));
+    --bp-glass-border: rgba(255,255,255,.16);
+    --bp-glass-border-strong: rgba(255,255,255,.28);
+
+    --bp-r-sm: 8px;
+    --bp-r-md: 14px;
+    --bp-r-lg: 20px;
+    --bp-r-xl: 28px;
+
+    --bp-shadow-glass: 0 1px 0 rgba(255,255,255,.08) inset,
+                       0 16px 50px rgba(2,8,20,.45);
+
+    --bp-pad: 28px;
+  }
+  html[data-density="compact"]{ --bp-pad: 20px; }
+
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; height:100%; }
+  body{
+    font-family: var(--bp-sans);
+    color: var(--bp-text);
+    background: var(--bp-navy-900);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height:100vh;
+    overflow-x: hidden;
+  }
+
+  /* ─── Background ────────────────────────────────────────────────────── */
+  .bp-bg{ position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+  .bp-bg-photo{
+    position: absolute; inset: 0;
+    background-size: cover; background-position: center;
+    transform: scale(1.06);
+    filter: brightness(0.7) saturate(1.05);
+    animation: bp-bg-drift 60s ease-in-out infinite alternate;
+  }
+  html[data-bg="gradient"] .bp-bg-photo{ display:none; }
+  @keyframes bp-bg-drift{
+    0%   { transform: scale(1.06) translate(0,0); }
+    100% { transform: scale(1.10) translate(-2%, -1%); }
+  }
+  .bp-bg-tint{
+    position: absolute; inset:0;
+    background:
+      radial-gradient(120% 80% at 20% 0%,  rgba(255,210,0,.06), transparent 60%),
+      radial-gradient(110% 90% at 100% 100%, rgba(34, 90, 160, .35), transparent 60%),
+      linear-gradient(180deg, rgba(7,24,43,.40) 0%, rgba(7,24,43,.60) 70%, rgba(7,24,43,.78) 100%);
+  }
+  html[data-bg="gradient"] .bp-bg-tint{
+    background:
+      radial-gradient(80% 60% at 80% 0%, rgba(34, 90, 160, .35), transparent 70%),
+      radial-gradient(60% 50% at 0% 100%, rgba(255,210,0,.07), transparent 70%),
+      linear-gradient(180deg, var(--bp-navy-800), var(--bp-navy-900));
+  }
+  .bp-bg-vignette{
+    position: absolute; inset:0;
+    background: radial-gradient(120% 80% at 50% 100%, transparent 50%, rgba(0,0,0,.45) 100%);
+  }
+
+  /* ─── App layout ────────────────────────────────────────────────────── */
+  .bp-app{ position: relative; z-index: 1; min-height: 100vh; display:flex; flex-direction:column; }
+  .bp-main{ flex: 1; padding: 0 0 80px; position: relative; z-index: 1; }
+  .bp-page{ max-width: 1320px; margin: 0 auto; padding: 36px 40px; }
+  html[data-density="compact"] .bp-page{ padding: 24px 32px; }
+  .bp-page-narrow{ max-width: 920px; }
+
+  /* ─── Typography ────────────────────────────────────────────────────── */
+  .bp-h-display{
+    font-family: var(--bp-serif);
+    font-weight: 500;
+    font-size: clamp(36px, 4.8vw, 64px);
+    line-height: 1.05;
+    letter-spacing: -0.005em;
+    margin: 0 0 8px;
+    color: #fff;
+  }
+  .bp-h-2{
+    font-family: var(--bp-serif); font-weight: 500;
+    font-size: clamp(24px, 2.2vw, 32px);
+    line-height: 1.15; margin: 0 0 8px;
+  }
+  .bp-h-3{
+    font-family: var(--bp-serif); font-weight: 600;
+    font-size: 20px; line-height: 1.2; margin: 0;
+  }
+  .bp-mono{ font-family: var(--bp-mono); font-size: 12px; letter-spacing: .02em; }
+
+  /* ─── Header ─────────────────────────────────────────────────────────── */
+  .bp-header{ position: sticky; top: 0; z-index: 30;
+    backdrop-filter: blur(18px) saturate(140%); -webkit-backdrop-filter: blur(18px) saturate(140%);
+    background: rgba(7,24,43,.45);
+    border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+  .bp-header-inner{
+    max-width: 1320px; margin: 0 auto;
+    display: flex; align-items: center; gap: 32px;
+    padding: 16px 40px;
+  }
+  .bp-logobtn{ background: none; border: 0; padding: 0; cursor: pointer; display: flex; align-items: center; }
+  .bp-nav{ display: flex; gap: 4px; margin-left: 12px; }
+  .bp-navlink{
+    appearance: none; background: transparent; border: 0; color: var(--bp-text-mute);
+    font-family: var(--bp-sans); font-size: 13px; font-weight: 500;
+    padding: 9px 14px; border-radius: 999px; cursor: pointer;
+    letter-spacing: .02em;
+    transition: color .18s ease, background .18s ease;
+  }
+  .bp-navlink:hover{ color: #fff; background: rgba(255,255,255,.06); }
+  .bp-navlink.is-active{ color: var(--bp-navy-900); background: var(--bp-accent); }
+  .bp-header-right{ margin-left: auto; display: flex; align-items: center; gap: 14px; }
+  .bp-rolepill{
+    font-size: 10px; font-weight: 700; letter-spacing: .18em; padding: 5px 10px;
+    border-radius: 999px; background: var(--bp-accent); color: var(--bp-navy-900);
+  }
+  .bp-user{ display:flex; align-items: center; gap: 10px; }
+  .bp-avatar{
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--bp-accent), #e6bd00 70%);
+    color: var(--bp-navy-900); display:flex; align-items:center; justify-content:center;
+    font-weight: 700; font-size: 12px; letter-spacing: .04em;
+    box-shadow: 0 0 0 1px rgba(255,255,255,.15);
+  }
+  .bp-avatar-sm{ width: 30px; height: 30px; font-size: 11px; }
+  .bp-user-meta{ line-height: 1.15; }
+  .bp-user-name{ font-size: 13px; font-weight: 600; }
+  .bp-user-email{ font-size: 11px; color: var(--bp-text-mute); }
+  .bp-iconbtn{
+    appearance: none; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+    color: var(--bp-text-soft);
+    width: 34px; height: 34px; border-radius: 10px; display:flex; align-items:center; justify-content:center;
+    cursor: pointer; transition: background .18s ease, color .18s ease;
+  }
+  .bp-iconbtn:hover{ background: rgba(255,255,255,.12); color: #fff; }
+
+  /* ─── Glass card ─────────────────────────────────────────────────────── */
+  .bp-glass{
+    background: var(--bp-glass-bg);
+    border: 1px solid var(--bp-glass-border);
+    border-radius: var(--bp-r-lg);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    box-shadow: var(--bp-shadow-glass);
+    position: relative;
+  }
+  .bp-glass::before{
+    content: ""; position: absolute; inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgba(255,255,255,.06), transparent 40%);
+    pointer-events: none;
+  }
+
+  /* ─── Buttons ────────────────────────────────────────────────────────── */
+  .bp-btn{
+    appearance: none; border: 0; cursor: pointer; font-family: var(--bp-sans);
+    font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+    display: inline-flex; align-items: center; justify-content: center; gap: 0;
+    border-radius: 999px; transition: transform .14s ease, background .18s ease, color .18s ease, box-shadow .18s ease;
+    white-space: nowrap;
+  }
+  .bp-btn-sm{ font-size: 11px; padding: 8px 14px; }
+  .bp-btn-md{ font-size: 12px; padding: 11px 20px; }
+  .bp-btn-lg{ font-size: 13px; padding: 14px 28px; }
+  .bp-btn-primary{ background: var(--bp-accent); color: var(--bp-navy-900); }
+  .bp-btn-primary:hover:not(:disabled){ background: #ffdf3d; transform: translateY(-1px); box-shadow: 0 8px 22px rgba(255,210,0,.25); }
+  .bp-btn-ghost{ background: rgba(255,255,255,.08); color: #fff; border: 1px solid rgba(255,255,255,.18); }
+  .bp-btn-ghost:hover:not(:disabled){ background: rgba(255,255,255,.16); transform: translateY(-1px); }
+  .bp-btn:disabled{ opacity: .45; cursor: not-allowed; }
+
+  /* ─── Pills ──────────────────────────────────────────────────────────── */
+  .bp-pill{
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+    padding: 5px 10px; border-radius: 999px;
+    border: 1px solid transparent;
+  }
+  .bp-pill-neutral{ background: rgba(255,255,255,.09); color: var(--bp-text-soft); border-color: rgba(255,255,255,.12); }
+  .bp-pill-accent { background: rgba(255,210,0,.16); color: var(--bp-accent); border-color: rgba(255,210,0,.35); }
+  .bp-pill-success{ background: rgba(52,211,153,.16); color: #67e8c0; border-color: rgba(52,211,153,.35); }
+  .bp-pill-danger { background: rgba(244,114,114,.16); color: #f99a9a; border-color: rgba(244,114,114,.35); }
+
+  /* ─── Progress bar ───────────────────────────────────────────────────── */
+  .bp-pb-wrap{ display: flex; align-items: center; gap: 10px; }
+  .bp-pb{
+    flex:1; background: rgba(255,255,255,.10); border-radius: 999px; overflow: hidden;
+    box-shadow: inset 0 1px 0 rgba(0,0,0,.2);
+  }
+  .bp-pb-fill{
+    height: 100%; background: linear-gradient(90deg, var(--bp-accent), #ffe14d);
+    border-radius: 999px; transition: width .7s cubic-bezier(.22,.61,.36,1);
+    box-shadow: 0 0 16px rgba(255,210,0,.4);
+  }
+  .bp-pb-label{ font-size: 12px; color: var(--bp-text-mute); font-variant-numeric: tabular-nums; }
+
+  /* ─── Login screen ───────────────────────────────────────────────────── */
+  .bp-login-wrap{
+    min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1fr) 1fr; gap: 60px;
+    align-items: center; padding: 60px clamp(40px, 8vw, 120px);
+  }
+  @media (max-width: 1000px){
+    .bp-login-wrap{ grid-template-columns: 1fr; gap: 40px; padding: 40px; }
+    .bp-login-side{ order: -1; }
+  }
+  .bp-login-card{ max-width: 520px; width: 100%; }
+  .bp-login-logo{ margin-bottom: 24px; }
+  .bp-login-eyebrow{
+    font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--bp-text-mute); margin-bottom: 14px;
+  }
+  .bp-login-sub{
+    color: var(--bp-text-soft); font-size: 15px; line-height: 1.55; margin: 14px 0 28px; max-width: 460px;
+  }
+  .bp-login-sub b{ color: var(--bp-accent); font-weight: 600; }
+  .bp-login-form{ display: flex; flex-direction: column; gap: 14px; }
+  .bp-field{ display: flex; flex-direction: column; gap: 6px; }
+  .bp-field-lbl{ font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--bp-text-mute); }
+  .bp-input{
+    appearance: none; font-family: var(--bp-sans); font-size: 14px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.14); color: #fff;
+    border-radius: 10px; padding: 12px 14px; outline: none;
+    transition: background .18s ease, border-color .18s ease, box-shadow .18s ease;
+  }
+  .bp-input:focus{ background: rgba(255,255,255,.1); border-color: rgba(255,210,0,.5); box-shadow: 0 0 0 3px rgba(255,210,0,.16); }
+  .bp-input::placeholder{ color: rgba(255,255,255,.35); }
+  textarea.bp-input{ resize: vertical; min-height: 60px; }
+  .bp-login-err{
+    font-size: 12px; color: #f99a9a; background: rgba(244,114,114,.12);
+    border: 1px solid rgba(244,114,114,.3); padding: 9px 12px; border-radius: 10px;
+  }
+  .bp-google-btn{
+    appearance: none; cursor: pointer; display:flex; align-items:center; justify-content:center; gap: 10px;
+    font-family: var(--bp-sans); font-size: 13px; font-weight: 600;
+    background: #fff; color: #1f1f1f; border: 0; border-radius: 999px; padding: 12px 18px;
+    transition: transform .14s ease, box-shadow .18s ease;
+    margin-top: 8px;
+  }
+  .bp-google-btn:hover:not(:disabled){ transform: translateY(-1px); box-shadow: 0 10px 24px rgba(0,0,0,.35); }
+  .bp-google-btn:disabled{ opacity: .6; cursor: wait; }
+  .bp-login-or{
+    text-align: center; font-size: 11px; color: var(--bp-text-dim); letter-spacing: .2em;
+    margin: 4px 0; position: relative;
+  }
+  .bp-login-or::before, .bp-login-or::after{
+    content:""; position: absolute; top: 50%; width: 40%; height: 1px;
+    background: rgba(255,255,255,.1);
+  }
+  .bp-login-or::before{ left: 0; }
+  .bp-login-or::after{ right: 0; }
+  .bp-login-or span{ background: transparent; padding: 0 12px; }
+  .bp-login-foot{ display: flex; justify-content: space-between; margin-top: 6px; }
+  .bp-link{
+    appearance: none; background: none; border: 0; color: var(--bp-accent);
+    font: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
+    padding: 4px 0;
+  }
+  .bp-link:hover{ text-decoration: underline; }
+  .bp-link-danger{ color: #f99a9a; }
+
+  .bp-login-side{ max-width: 480px; }
+  .bp-login-side-h{
+    font-family: var(--bp-serif); font-weight: 500; font-size: clamp(28px, 3.2vw, 44px);
+    line-height: 1.15; color: #fff; margin: 16px 0 28px;
+  }
+  .bp-login-side-list{
+    list-style: none; padding: 0; margin: 0 0 32px; display: grid; gap: 14px;
+    color: var(--bp-text-soft); font-size: 15px;
+  }
+  .bp-login-side-list li{ display:flex; align-items:center; gap: 12px; }
+  .bp-login-side-list li > span:first-child{
+    display: inline-flex; flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--bp-accent); box-shadow: 0 0 12px rgba(255,210,0,.5);
+  }
+  .bp-login-side-list li > span:last-child{ color: var(--bp-text-soft); font-size: 15px; line-height: 1.5; }
+  .bp-login-side-foot{ font-size: 11px; color: var(--bp-text-dim); letter-spacing: .04em; }
+
+  /* ─── Welcome / Dashboard ────────────────────────────────────────────── */
+  .bp-welcome{ margin-bottom: 28px; }
+  .bp-welcome-eyebrow{
+    font-size: 11px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--bp-accent); margin-bottom: 10px;
+  }
+  .bp-welcome-sub{
+    color: var(--bp-text-soft); font-size: 16px; line-height: 1.5; margin: 4px 0 0; max-width: 640px;
+  }
+
+  /* Continue card */
+  .bp-continue{ display: grid; grid-template-columns: 1fr auto; gap: 28px; align-items: center; margin-bottom: 28px; }
+  @media (max-width: 720px){ .bp-continue{ grid-template-columns: 1fr; } }
+  .bp-continue-l{ min-width: 0; }
+  .bp-continue-meta{ display: flex; gap: 10px; color: var(--bp-text-mute); font-size: 13px; margin-bottom: 14px; }
+  .bp-continue-meta .dot{ color: var(--bp-text-dim); }
+  .bp-continue-pb{ display: flex; align-items: center; gap: 14px; max-width: 520px; }
+  .bp-continue-pct{ font-size: 12px; color: var(--bp-text-mute); font-variant-numeric: tabular-nums; }
+  .bp-continue-r{ display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
+
+  /* Stats row */
+  .bp-stats{
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 32px;
+  }
+  @media (max-width: 720px){ .bp-stats{ grid-template-columns: repeat(2, 1fr); } }
+  .bp-stat{ display: flex; flex-direction: column; gap: 4px; }
+  .bp-stat-v{ font-family: var(--bp-serif); font-size: 32px; font-weight: 500; line-height: 1; }
+  .bp-stat-l{ font-size: 12px; color: var(--bp-text-mute); letter-spacing: .02em; }
+
+  /* Section head */
+  .bp-section-head{
+    display: flex; justify-content: space-between; align-items: baseline; margin: 0 0 18px;
+  }
+  .bp-section-meta{ font-size: 12px; color: var(--bp-text-mute); }
+
+  /* Module grid */
+  .bp-mod-grid{
+    display: grid; gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+  .bp-mod-card{ overflow: hidden; display: flex; flex-direction: column; cursor: default; transition: transform .25s ease, border-color .25s ease; }
+  .bp-mod-card:hover{ transform: translateY(-3px); border-color: var(--bp-glass-border-strong); }
+  .bp-mod-thumb{
+    position: relative; height: 130px;
+    background:
+      linear-gradient(135deg, rgba(255,210,0,.06), transparent 60%),
+      linear-gradient(180deg, rgba(17,54,94,.7), rgba(7,24,43,.85));
+    overflow: hidden;
+  }
+  .bp-mod-thumb-code{
+    position: absolute; left: 16px; top: 14px;
+    font-family: var(--bp-mono); font-size: 11px;
+    color: var(--bp-accent); letter-spacing: .12em;
+  }
+  .bp-mod-thumb-glyph{ position: absolute; right: 8px; bottom: 8px; width: 72px; height: 72px; opacity: .55; }
+  .bp-mod-body{ padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+  .bp-mod-cat{ font-size: 11px; color: var(--bp-text-mute); letter-spacing: .08em; text-transform: uppercase; font-weight: 600; }
+  .bp-mod-title{ font-family: var(--bp-serif); font-size: 22px; line-height: 1.15; margin: 0; font-weight: 500; }
+  .bp-mod-desc{ font-size: 13px; line-height: 1.5; color: var(--bp-text-soft); margin: 0; min-height: 38px; }
+  .bp-mod-progress{ display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+  .bp-mod-pct{ font-size: 11px; color: var(--bp-text-mute); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .bp-mod-cta{ display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+
+  /* Category pills */
+  .bp-cat-row{ display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 24px; }
+  .bp-cat-pill{
+    appearance: none; cursor: pointer; font-family: var(--bp-sans); font-size: 12px; font-weight: 600;
+    letter-spacing: .04em; padding: 8px 16px; border-radius: 999px;
+    background: rgba(255,255,255,.06); color: var(--bp-text-soft); border: 1px solid rgba(255,255,255,.12);
+    transition: background .18s ease, color .18s ease, border-color .18s ease;
+  }
+  .bp-cat-pill:hover{ background: rgba(255,255,255,.1); }
+  .bp-cat-pill.is-active{ background: var(--bp-accent); color: var(--bp-navy-900); border-color: transparent; }
+
+  /* ─── Module deck viewer ─────────────────────────────────────────────── */
+  .bp-deck-wrap{ max-width: 1280px; margin: 0 auto; padding: 28px 40px 32px; min-height: calc(100vh - 80px); display: flex; flex-direction: column; }
+  .bp-deck-topbar{
+    display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 20px;
+  }
+  .bp-back{
+    appearance: none; cursor: pointer; background: transparent; border: 0; color: var(--bp-text-soft);
+    display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; padding: 4px 0;
+  }
+  .bp-back:hover{ color: #fff; }
+  .bp-deck-titlebar{ display: flex; align-items: center; gap: 12px; }
+  .bp-deck-title-txt{ font-family: var(--bp-serif); font-size: 18px; }
+  .bp-deck-counter{ font-family: var(--bp-mono); font-size: 12px; color: var(--bp-text-mute); }
+
+  .bp-deck-stage-wrap{ flex: 1; display: flex; align-items: stretch; justify-content: center; min-height: 0; margin-bottom: 20px; }
+  .bp-deck-stage{
+    width: 100%; max-width: 1280px;
+    min-height: 700px; height: clamp(680px, 82vh, 980px);
+    display: flex; align-items: stretch; justify-content: stretch;
+    overflow: hidden;
+  }
+  .bp-slide{
+    width: 100%; padding: 28px 40px; display: flex; flex-direction: column; justify-content: center;
+    position: relative;
+  }
+  /* Slides with images get tighter text */
+  .bp-slide-with-img .bp-slide-h{
+    font-size: clamp(22px, 2.2vw, 34px); margin-bottom: 14px;
+  }
+  .bp-slide-with-img .bp-slide-body{
+    font-size: clamp(13px, 1vw, 15px); line-height: 1.5;
+  }
+  .bp-slide-with-img .bp-pillar-grid{ gap: 10px; }
+  .bp-slide-with-img .bp-pillar{ padding: 14px; }
+  .bp-slide-with-img .bp-pillar-k{ font-size: 17px; }
+  .bp-slide-with-img .bp-pillar-v{ font-size: 12px; }
+  .bp-slide-with-img .bp-list-big{ gap: 8px; }
+  .bp-slide-with-img .bp-list-big li{ font-size: clamp(13px, 1vw, 16px); padding: 6px 0; }
+  .bp-slide-with-img .bp-steps-grid{ gap: 8px; }
+  .bp-slide-with-img .bp-step{ padding: 12px 16px; }
+  .bp-slide-with-img .bp-step-n{ font-size: 28px; }
+  .bp-slide-with-img .bp-step-h{ font-size: 16px; }
+  .bp-slide-with-img .bp-step-b{ font-size: 12.5px; }
+  .bp-slide-eyebrow{
+    font-size: 12px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase;
+    color: var(--bp-accent); margin-bottom: 18px;
+  }
+  .bp-slide-cover{ justify-content: center; align-items: flex-start; gap: 12px; }
+  .bp-slide-cover-title{
+    font-family: var(--bp-serif); font-weight: 500;
+    font-size: clamp(40px, 5vw, 72px); line-height: 1; margin: 0; max-width: 900px;
+  }
+  .bp-slide-cover-sub{
+    font-family: var(--bp-serif); font-size: 24px; color: var(--bp-text-soft); margin: 16px 0 0;
+  }
+  .bp-slide-cover-meta{ margin-top: 36px; display: flex; gap: 10px; color: var(--bp-text-mute); font-size: 13px; }
+  .bp-slide-cover-meta .dot{ color: var(--bp-text-dim); }
+  .bp-slide-h{
+    font-family: var(--bp-serif); font-weight: 500;
+    font-size: clamp(32px, 3.6vw, 52px); line-height: 1.1; margin: 0 0 24px;
+  }
+  .bp-slide-body{ font-size: clamp(16px, 1.2vw, 19px); line-height: 1.6; color: var(--bp-text-soft); max-width: 880px; }
+
+  .bp-pillar-grid{
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-top: 8px;
+  }
+  .bp-pillar{
+    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+    border-radius: 14px; padding: 22px;
+    transition: transform .25s ease, border-color .25s ease;
+  }
+  .bp-pillar:hover{ border-color: rgba(255,210,0,.35); transform: translateY(-2px); }
+  .bp-pillar-num{
+    font-family: var(--bp-mono); font-size: 11px; color: var(--bp-accent); letter-spacing: .14em; margin-bottom: 10px;
+  }
+  .bp-pillar-k{ font-family: var(--bp-serif); font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+  .bp-pillar-v{ font-size: 13.5px; line-height: 1.5; color: var(--bp-text-soft); }
+
+  .bp-list-big{ list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 14px; }
+  .bp-list-big li{
+    display: flex; align-items: flex-start; gap: 16px;
+    font-size: clamp(16px, 1.4vw, 22px); font-family: var(--bp-serif); line-height: 1.4;
+    color: var(--bp-text); padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.06);
+  }
+  .bp-list-big li:last-child{ border-bottom: 0; }
+  .bp-list-bullet{
+    display: inline-flex; flex: 0 0 26px; width: 26px; height: 26px; border-radius: 50%;
+    background: var(--bp-accent); align-items: center; justify-content: center; margin-top: 6px;
+  }
+
+  .bp-slide-quote{ justify-content: center; align-items: center; text-align: center; }
+  .bp-quote-mark{ font-family: var(--bp-serif); font-size: 120px; line-height: .6; color: var(--bp-accent); opacity: .55; }
+  .bp-quote{
+    font-family: var(--bp-serif); font-style: italic; font-weight: 400;
+    font-size: clamp(28px, 3vw, 44px); line-height: 1.3; max-width: 860px; margin: 24px auto 18px;
+  }
+  .bp-quote-attrib{ font-size: 13px; color: var(--bp-text-mute); letter-spacing: .12em; }
+
+  .bp-slide-outro{ justify-content: center; align-items: flex-start; }
+
+  .bp-deck-nav{
+    display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  }
+  .bp-deck-dots{ display: flex; gap: 8px; }
+  .bp-deck-dot{
+    appearance: none; cursor: pointer; width: 10px; height: 10px; border-radius: 50%;
+    background: rgba(255,255,255,.18); border: 0; padding: 0;
+    transition: background .18s ease, transform .18s ease;
+  }
+  .bp-deck-dot:hover{ background: rgba(255,255,255,.35); }
+  .bp-deck-dot.is-active{ background: var(--bp-accent); transform: scale(1.4); }
+  .bp-deck-dot.is-done{ background: rgba(255,210,0,.55); }
+
+  /* ─── Quiz ───────────────────────────────────────────────────────────── */
+  .bp-quiz-intro{ }
+  .bp-quiz-sub{ color: var(--bp-text-soft); font-size: 14px; margin: 12px 0 22px; }
+  .bp-quiz-rules{ display: grid; gap: 14px; margin: 16px 0 0; }
+  .bp-quiz-rule{ display: flex; gap: 16px; align-items: flex-start; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,.08); font-size: 14px; color: var(--bp-text-soft); }
+  .bp-quiz-rule:last-child{ border: 0; }
+  .bp-quiz-rule b{ color: #fff; font-weight: 600; }
+  .bp-quiz-rule-n{ font-family: var(--bp-mono); font-size: 12px; color: var(--bp-accent); letter-spacing: .1em; min-width: 24px; }
+
+  .bp-quiz-topbar{ display: flex; align-items: center; gap: 18px; margin-bottom: 20px; }
+  .bp-quiz-counter{ font-size: 13px; font-weight: 600; }
+  .bp-quiz-bar{ flex: 1; height: 6px; background: rgba(255,255,255,.1); border-radius: 999px; overflow: hidden; }
+  .bp-quiz-bar > div{ height: 100%; background: var(--bp-accent); transition: width .35s ease; box-shadow: 0 0 12px rgba(255,210,0,.4); }
+  .bp-quiz-card{ margin-bottom: 18px; }
+  .bp-quiz-q-eyebrow{ font-size: 11px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; color: var(--bp-accent); margin-bottom: 14px; }
+  .bp-quiz-q{ font-family: var(--bp-serif); font-weight: 500; font-size: clamp(22px, 2.2vw, 30px); line-height: 1.3; margin: 0 0 22px; }
+  .bp-quiz-choices{ display: flex; flex-direction: column; gap: 10px; }
+  .bp-quiz-choice{
+    appearance: none; text-align: left; cursor: pointer; font: inherit;
+    display: flex; align-items: center; gap: 14px; padding: 16px 18px;
+    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);
+    border-radius: 14px; color: var(--bp-text);
+    transition: background .18s ease, border-color .18s ease, transform .14s ease;
+  }
+  .bp-quiz-choice:hover{ background: rgba(255,255,255,.08); border-color: rgba(255,210,0,.35); }
+  .bp-quiz-choice.is-selected{ background: rgba(255,210,0,.12); border-color: var(--bp-accent); }
+  .bp-choice-letter{
+    flex: 0 0 30px; width: 30px; height: 30px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; background: rgba(255,255,255,.08); color: var(--bp-text-soft);
+    transition: background .18s ease, color .18s ease;
+  }
+  .bp-quiz-choice.is-selected .bp-choice-letter{ background: var(--bp-accent); color: var(--bp-navy-900); }
+  .bp-choice-text{ flex: 1; font-size: 14.5px; line-height: 1.4; }
+  .bp-choice-check{ color: var(--bp-accent); flex: 0 0 20px; }
+  .bp-quiz-nav{ display: flex; justify-content: space-between; align-items: center; }
+
+  /* Quiz results */
+  .bp-quiz-results{ text-align: center; }
+  .bp-result-badge{
+    width: 100px; height: 100px; border-radius: 50%; margin: 0 auto 18px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 12px 40px rgba(0,0,0,.3);
+  }
+  .bp-result-badge.is-pass{ background: linear-gradient(135deg, var(--bp-accent), #ffe14d); color: var(--bp-navy-900); }
+  .bp-result-badge.is-fail{ background: rgba(244,114,114,.2); color: #f99a9a; border: 1px solid rgba(244,114,114,.4); }
+  .bp-result-score{ display: flex; flex-direction: column; align-items: center; margin: 18px 0 28px; }
+  .bp-result-score-n{ font-family: var(--bp-serif); font-size: 96px; line-height: 1; color: var(--bp-accent); font-weight: 500; }
+  .bp-result-score-n small{ font-size: 30px; opacity: .65; }
+  .bp-result-score-d{ font-size: 13px; color: var(--bp-text-mute); margin-top: 6px; }
+  .bp-result-msg{ color: var(--bp-text-soft); font-size: 15px; margin: 0 0 18px; }
+  .bp-result-btn-row{ display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .bp-result-review{ margin-top: 36px; text-align: left; padding-top: 28px; border-top: 1px solid rgba(255,255,255,.1); }
+  .bp-review-item{
+    display: grid; grid-template-columns: 32px 1fr 32px; gap: 14px; align-items: flex-start;
+    padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,.06);
+  }
+  .bp-review-item:last-child{ border: 0; }
+  .bp-review-num{ font-family: var(--bp-mono); font-size: 12px; color: var(--bp-text-mute); padding-top: 2px; }
+  .bp-review-q{ font-size: 14px; line-height: 1.4; margin-bottom: 6px; }
+  .bp-review-a{ font-size: 12.5px; color: var(--bp-text-mute); display: flex; flex-direction: column; gap: 2px; }
+  .bp-review-a .ok{ color: #67e8c0; }
+  .bp-review-a .x{ color: #f99a9a; }
+  .bp-review-item.is-x .bp-review-a > span:first-child{ color: #f99a9a; }
+  .bp-review-mark{ font-size: 18px; font-weight: 700; text-align: center; }
+  .bp-review-item.is-ok .bp-review-mark{ color: #67e8c0; }
+  .bp-review-item.is-x  .bp-review-mark{ color: #f99a9a; }
+
+  /* ─── Certificate ────────────────────────────────────────────────────── */
+  .bp-cert-page{ padding-bottom: 60px; }
+  .bp-cert-topbar{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .bp-cert-actions{ display: flex; gap: 8px; }
+  .bp-cert-frame{
+    padding: 18px;
+    background: linear-gradient(135deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 24px;
+    box-shadow: 0 30px 80px rgba(0,0,0,.5);
+  }
+  .bp-cert{
+    position: relative; aspect-ratio: 16/11; width: 100%;
+    border-radius: 14px; overflow: hidden;
+    color: #fff;
+    isolation: isolate;
+  }
+  .bp-cert-photo{
+    position: absolute; inset: 0; z-index: 0;
+    background-image: url("https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=2400&q=80");
+    background-size: cover; background-position: center;
+    filter: brightness(0.45) saturate(1.1);
+  }
+  .bp-cert-tint{
+    position: absolute; inset: 0; z-index: 1;
+    background:
+      radial-gradient(60% 50% at 50% 30%, rgba(7,24,43,.4), transparent 60%),
+      linear-gradient(180deg, rgba(7,24,43,.4) 0%, rgba(7,24,43,.7) 100%);
+  }
+  .bp-cert-border{ position: absolute; inset: 24px; border: 1px solid rgba(255,210,0,.4); z-index: 2; pointer-events: none; }
+  .bp-cert-border::before{ content:""; position: absolute; inset: 6px; border: 1px solid rgba(255,210,0,.15); }
+  .bp-cert-corner{
+    position: absolute; width: 32px; height: 32px; border: 2px solid var(--bp-accent);
+  }
+  .bp-cert-corner.tl{ top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+  .bp-cert-corner.tr{ top: -1px; right: -1px; border-left: 0; border-bottom: 0; }
+  .bp-cert-corner.bl{ bottom: -1px; left: -1px; border-right: 0; border-top: 0; }
+  .bp-cert-corner.br{ bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+
+  .bp-cert-content{
+    position: relative; z-index: 3; padding: 50px clamp(40px, 6%, 80px);
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    height: 100%; justify-content: space-between;
+  }
+  .bp-cert-logo{ display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+  .bp-cert-logo-txt{ font-family: var(--bp-serif); font-size: 24px; font-weight: 500; color: #fff; letter-spacing: .04em; }
+  .bp-cert-eyebrow{
+    font-size: 12px; font-weight: 700; letter-spacing: .32em; text-transform: uppercase;
+    color: var(--bp-accent); margin-top: 6px;
+  }
+  .bp-cert-presented{ font-family: var(--bp-serif); font-style: italic; font-size: 17px; color: var(--bp-text-soft); margin-top: 8px; }
+  .bp-cert-name{
+    font-family: var(--bp-serif); font-weight: 500;
+    font-size: clamp(40px, 5.5vw, 72px); line-height: 1; margin: 14px 0 8px;
+    color: #fff;
+  }
+  .bp-cert-rule{
+    width: 280px; height: 1px; background: linear-gradient(90deg, transparent, var(--bp-accent), transparent);
+    margin: 0 auto 8px;
+  }
+  .bp-cert-body{ font-family: var(--bp-serif); font-style: italic; font-size: 16px; color: var(--bp-text-soft); margin: 6px 0 10px; }
+  .bp-cert-course{
+    font-family: var(--bp-serif); font-weight: 600;
+    font-size: clamp(24px, 2.6vw, 36px); margin: 0; color: var(--bp-accent);
+  }
+  .bp-cert-course-sub{ font-family: var(--bp-serif); font-style: italic; font-size: 16px; color: var(--bp-text-soft); margin-top: 4px; }
+  .bp-cert-meta{
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px;
+    margin-top: 18px; width: 80%; max-width: 600px;
+  }
+  .bp-cert-meta-col{ }
+  .bp-cert-meta-l{ font-size: 10px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--bp-text-mute); margin-bottom: 4px; }
+  .bp-cert-meta-v{ font-family: var(--bp-serif); font-size: 17px; }
+  .bp-cert-meta-v.mono{ font-family: var(--bp-mono); font-size: 11px; word-break: break-all; }
+
+  .bp-cert-signatures{ display: flex; align-items: flex-end; justify-content: space-between; width: 100%; max-width: 720px; margin: 0 auto; gap: 20px; }
+  .bp-cert-sig{ flex: 1; text-align: center; }
+  .bp-cert-sig-line{ border-bottom: 1px solid rgba(255,210,0,.35); padding-bottom: 4px; margin-bottom: 8px; }
+  .bp-cert-sig-name{ font-family: var(--bp-serif); font-weight: 600; font-size: 14px; }
+  .bp-cert-sig-title{ font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--bp-text-mute); margin-top: 2px; }
+  .bp-cert-seal{ flex: 0 0 auto; opacity: 1; display:flex; align-items:center; justify-content:center; }
+  .bp-cert-footer{
+    margin-top: 12px; display: flex; gap: 12px; justify-content: center; align-items: center;
+    font-size: 11px; color: var(--bp-text-mute); letter-spacing: .04em;
+  }
+  .bp-cert-footer em{ color: var(--bp-accent); font-family: var(--bp-serif); }
+
+  .bp-cert-tip{ margin: 20px auto 0; max-width: 720px; text-align: center; font-size: 12px; color: var(--bp-text-mute); }
+
+  /* Cert grid (my certs) */
+  .bp-cert-grid{ display: grid; gap: 18px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+  .bp-cert-card{ cursor: pointer; overflow: hidden; transition: transform .25s ease, border-color .25s ease; }
+  .bp-cert-card:hover{ transform: translateY(-3px); border-color: var(--bp-glass-border-strong); }
+  .bp-cert-card-preview{ position: relative; aspect-ratio: 4/3; overflow: hidden;
+    background-image: url("https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80");
+    background-size: cover; background-position: center;
+  }
+  .bp-cert-card-tint{ position: absolute; inset: 0; background: linear-gradient(180deg, rgba(7,24,43,.4) 0%, rgba(7,24,43,.85) 100%); }
+  .bp-cert-card-inner{ position: relative; padding: 22px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; }
+  .bp-cert-card-eyebrow{ font-size: 10px; font-weight: 700; letter-spacing: .2em; color: var(--bp-accent); margin-top: 8px; }
+  .bp-cert-card-title{ font-family: var(--bp-serif); font-size: 22px; line-height: 1.15; }
+  .bp-cert-card-meta{ font-size: 11px; color: var(--bp-text-mute); margin-top: 6px; }
+  .bp-cert-card-foot{ display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-top: 1px solid rgba(255,255,255,.08); }
+
+  /* ─── Admin: table ───────────────────────────────────────────────────── */
+  .bp-admin-head{ display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 24px; flex-wrap: wrap; }
+  .bp-admin-sub{ color: var(--bp-text-soft); font-size: 14px; margin: 6px 0 0; }
+  .bp-admin-head-actions{ display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+  .bp-search{ display: flex; align-items: center; gap: 8px; padding: 9px 14px;
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius: 999px;
+    color: var(--bp-text-soft); min-width: 240px; }
+  .bp-search:focus-within{ border-color: rgba(255,210,0,.5); }
+  .bp-search input{ background: transparent; border: 0; outline: none; color: #fff; font: inherit; font-size: 13px; flex: 1; }
+  .bp-search input::placeholder{ color: var(--bp-text-dim); }
+
+  .bp-table-card{ overflow: hidden; }
+  .bp-table{ width: 100%; border-collapse: collapse; font-size: 13px; }
+  .bp-table th{
+    text-align: left; padding: 14px 18px; font-size: 11px; font-weight: 600;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--bp-text-mute);
+    background: rgba(255,255,255,.04); border-bottom: 1px solid rgba(255,255,255,.1);
+  }
+  .bp-table td{ padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,.06); vertical-align: middle; }
+  .bp-table tr:last-child td{ border-bottom: 0; }
+  .bp-table tr:hover td{ background: rgba(255,255,255,.03); }
+  .bp-tbl-learner{ display: flex; align-items: center; gap: 12px; }
+  .bp-tbl-title{ font-weight: 600; font-size: 13.5px; }
+  .bp-tbl-sub{ font-size: 12px; color: var(--bp-text-mute); margin-top: 2px; }
+  .bp-row-actions{ display: flex; gap: 14px; }
+
+  .bp-progress-table th, .bp-progress-table td{ padding: 12px 10px; }
+  .bp-progress-mod-h{ text-align: center; }
+  .bp-progress-cell{ display: flex; align-items: center; gap: 10px; }
+  .bp-progress-cell-l{ font-size: 11px; color: var(--bp-text-mute); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .bp-progress-cell-mini{ text-align: center; font-family: var(--bp-mono); font-size: 14px; }
+  .bp-progress-cell-mini.ok{ color: var(--bp-accent); }
+  .bp-progress-cell-mini.mid{ color: #67e8c0; }
+  .bp-progress-cell-mini.off{ color: var(--bp-text-mute); }
+  .bp-progress-cell-mini.none{ color: var(--bp-text-dim); }
+
+  /* ─── Modal ──────────────────────────────────────────────────────────── */
+  .bp-modal-overlay{
+    position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center;
+    padding: 40px; background: rgba(7,24,43,.6); backdrop-filter: blur(12px);
+  }
+  .bp-modal{
+    width: 100%; max-width: 560px; max-height: calc(100vh - 80px);
+    background: rgba(15,32,55,.95);
+    border: 1px solid rgba(255,255,255,.14); border-radius: 18px;
+    box-shadow: 0 30px 80px rgba(0,0,0,.6);
+    overflow: hidden; display: flex; flex-direction: column;
+  }
+  .bp-modal-head{ display:flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid rgba(255,255,255,.1); }
+  .bp-modal-body{ padding: 22px; overflow-y: auto; }
+  .bp-modal-foot{ display: flex; justify-content: flex-end; gap: 10px; padding: 16px 22px; border-top: 1px solid rgba(255,255,255,.1); background: rgba(0,0,0,.15); }
+
+  .bp-editor{ display: flex; flex-direction: column; gap: 14px; }
+  .bp-editor-row{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .bp-editor-row .bp-stat-mini{ background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 14px; }
+  .bp-stat-mini-v{ font-family: var(--bp-serif); font-size: 24px; }
+  .bp-stat-mini-l{ font-size: 11px; color: var(--bp-text-mute); }
+  .bp-helper{ font-size: 12px; color: var(--bp-text-mute); margin: 4px 0 0; }
+  .bp-editor-section{ border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .bp-editor-section-h{ display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--bp-text-mute); }
+  .bp-upload-zone{ display: block; cursor: pointer; border: 1.5px dashed rgba(255,255,255,.2); border-radius: 10px; transition: border-color .2s ease; }
+  .bp-upload-zone:hover{ border-color: var(--bp-accent); }
+  .bp-upload-inner{ display: flex; align-items: center; gap: 10px; padding: 14px 16px; }
+  .bp-spinner{ width:16px; height:16px; border-radius:50%; border:2px solid rgba(255,210,0,.3); border-top-color:var(--bp-accent); animation: spin .7s linear infinite; flex:0 0 auto; }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+  .bp-enroll-list{ display: flex; flex-direction: column; gap: 8px; max-height: 380px; overflow-y: auto; padding-right: 4px; }
+  .bp-enroll-row{
+    display: grid; grid-template-columns: 24px 1fr auto; gap: 12px; align-items: center;
+    padding: 12px 14px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); border-radius: 12px;
+    cursor: pointer;
+  }
+  .bp-enroll-row.is-on{ background: rgba(255,210,0,.08); border-color: rgba(255,210,0,.3); }
+  .bp-enroll-row input{ accent-color: var(--bp-accent); }
+
+  /* ─── Print (certificate PDF) ───────────────────────────────────────── */
+  @media print{
+    body{ background: #fff; }
+    .bp-bg, .bp-header, .bp-no-print, .twk-panel{ display: none !important; }
+    .bp-app{ background: #fff; }
+    .bp-cert-page{ padding: 0; }
+    .bp-cert-frame{ box-shadow: none; border: 0; padding: 0; background: transparent; }
+    .bp-cert{ aspect-ratio: auto; height: 100vh; }
+    .bp-main{ padding: 0; }
+    .bp-cert-tip{ display: none; }
+  }
+
+  /* ─── Slide: twocol ─────────────────────────────────────────────────── */
+  .bp-twocol-grid{ display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
+  @media (max-width: 880px){ .bp-twocol-grid{ grid-template-columns: 1fr; } }
+  .bp-twocol-col{
+    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+    border-radius: 16px; padding: 22px 24px;
+  }
+  .bp-twocol-col.is-l{ border-top: 2px solid rgba(244,114,114,.5); }
+  .bp-twocol-col.is-r{ border-top: 2px solid var(--bp-accent); }
+  .bp-twocol-h{
+    font-family: var(--bp-serif); font-size: 24px; font-weight: 600; margin-bottom: 14px;
+  }
+  .bp-twocol-list{ list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+  .bp-twocol-list li{
+    position: relative; padding-left: 18px;
+    font-size: 14.5px; line-height: 1.5; color: var(--bp-text-soft);
+  }
+  .bp-twocol-list li::before{
+    content: ""; position: absolute; left: 0; top: 9px;
+    width: 6px; height: 6px; border-radius: 50%; background: var(--bp-accent);
+  }
+  .bp-twocol-col.is-l .bp-twocol-list li::before{ background: rgba(244,114,114,.7); }
+
+  /* ─── Slide: steps ─────────────────────────────────────────────────── */
+  .bp-steps-grid{ display: flex; flex-direction: column; gap: 14px; }
+  .bp-step{
+    display: grid; grid-template-columns: 64px 1fr; gap: 18px; align-items: flex-start;
+    padding: 18px 22px;
+    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);
+    border-radius: 14px;
+    transition: border-color .25s ease;
+  }
+  .bp-step:hover{ border-color: rgba(255,210,0,.3); }
+  .bp-step-n{
+    font-family: var(--bp-serif); font-size: 40px; line-height: 1; color: var(--bp-accent);
+    font-weight: 500;
+  }
+  .bp-step-h{ font-family: var(--bp-serif); font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+  .bp-step-b{ font-size: 14.5px; line-height: 1.5; color: var(--bp-text-soft); }
+
+  /* ─── Slide: image panel ────────────────────────────────────────────── */
+  .bp-slide-with-img{
+    display: grid; grid-template-columns: 42% 58%; gap: 20px;
+    width: 100%; height: 100%; align-items: center;
+  }
+  @media (max-width: 900px){ .bp-slide-with-img{ grid-template-columns: 1fr; } }
+  .bp-slide-text-col{
+    display: flex; flex-direction: column; justify-content: center; min-width: 0;
+    overflow: visible;
+  }
+  /* Single image: stacked column, full width */
+  .bp-slide-img-col{
+    display: flex; flex-direction: column; gap: 8px;
+    justify-content: center; align-items: stretch; min-width: 0;
+    height: 100%; padding: 4px 0;
+  }
+  /* Two images: text top / images bottom layout */
+  .bp-slide-double-layout{
+    display: flex; flex-direction: column; gap: 14px; width: 100%; height: 100%;
+  }
+  .bp-slide-double-text{
+    flex: 0 0 auto; display: flex; flex-direction: column; justify-content: flex-start;
+    padding: 0;
+  }
+  .bp-slide-double-text .bp-slide-h{ font-size: clamp(16px,1.7vw,26px); margin-bottom: 6px; }
+  .bp-slide-double-text .bp-slide-body{ font-size: clamp(11px,.85vw,13px); line-height: 1.45; }
+  .bp-slide-double-imgs{
+    flex: 1; display: flex; flex-direction: row; gap: 10px; min-height: 0; align-items: stretch;
+  }
+  .bp-slide-img-frame-double{
+    flex: 1; min-width: 0;
+  }
+  .bp-slide-img-frame-double img{
+    width: 100%; height: 100%;
+    object-fit: contain; display: block;
+    max-height: none;
+  }
+  .bp-slide-img-frame{
+    border-radius: 8px; overflow: hidden;
+    border: 1px solid rgba(255,255,255,.2);
+    box-shadow: 0 8px 32px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.05) inset;
+    background: #1a2535;
+    display: flex; align-items: flex-start; justify-content: center;
+  }
+  .bp-slide-img-frame img{
+    width: 100%; height: auto; display: block;
+    object-fit: contain;
+    max-height: none;
+  }
+  /* Tighter text on image-split slides */
+  .bp-slide-with-img .bp-slide-h{
+    font-size: clamp(16px, 1.9vw, 28px); margin-bottom: 10px; line-height: 1.2;
+  }
+  .bp-slide-with-img .bp-slide-body{
+    font-size: clamp(11.5px, .9vw, 13.5px); line-height: 1.55; white-space: pre-line;
+  }
+  .bp-slide-with-img .bp-pillar-grid{ grid-template-columns: 1fr 1fr; gap: 6px; }
+  .bp-slide-with-img .bp-pillar{ padding: 8px 10px; }
+  .bp-slide-with-img .bp-pillar-num{ font-size: 9px; margin-bottom: 3px; }
+  .bp-slide-with-img .bp-pillar-k{ font-size: 13px; margin-bottom: 2px; }
+  .bp-slide-with-img .bp-pillar-v{ font-size: 11px; line-height: 1.35; }
+  .bp-slide-with-img .bp-list-big{ gap: 6px; }
+  .bp-slide-with-img .bp-list-big li{ font-size: clamp(11px, .9vw, 14px); padding: 4px 0; border: none; }
+  .bp-slide-with-img .bp-list-bullet{ width: 20px; height: 20px; flex: 0 0 20px; margin-top: 3px; }
+  .bp-slide-with-img .bp-steps-grid{ gap: 6px; }
+  .bp-slide-with-img .bp-step{ padding: 8px 12px; grid-template-columns: 44px 1fr; gap: 10px; }
+  .bp-slide-with-img .bp-step-n{ font-size: 22px; }
+  .bp-slide-with-img .bp-step-h{ font-size: 13px; margin-bottom: 2px; }
+  .bp-slide-with-img .bp-step-b{ font-size: 11.5px; line-height: 1.4; }
+  .bp-slide-with-img .bp-twocol-grid{ grid-template-columns: 1fr; gap: 8px; }
+  .bp-slide-with-img .bp-twocol-col{ padding: 12px 14px; }
+  .bp-slide-with-img .bp-twocol-h{ font-size: 15px; margin-bottom: 6px; }
+  .bp-slide-with-img .bp-twocol-list li{ font-size: 12px; line-height: 1.4; }
+
+  /* ─── Slide: callout ────────────────────────────────────────────────── */
+  .bp-slide-callout{ justify-content: center; }
+  .bp-callout{
+    display: grid; grid-template-columns: 6px 1fr; gap: 28px;
+    max-width: 880px;
+  }
+  .bp-callout-bar{ background: linear-gradient(180deg, var(--bp-accent), transparent); border-radius: 999px; }
+
+  /* ─── Locked module card overlay ────────────────────────────────────── */
+  .bp-mod-card.is-locked{ opacity: .82; }
+  .bp-mod-card.is-locked .bp-mod-title,
+  .bp-mod-card.is-locked .bp-mod-desc{ color: var(--bp-text-mute); }
+  .bp-mod-card.is-locked .bp-mod-thumb-glyph{ opacity: .18; }
+  .bp-mod-lock-overlay{
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(circle at 50% 50%, rgba(7,24,43,.35), rgba(7,24,43,.78));
+    pointer-events: none;
+  }
+
+  /* ─── FAQ ───────────────────────────────────────────────────────────── */
+  .bp-faq-search-wrap{ display: flex; gap: 10px; margin-bottom: 28px; }
+  .bp-faq-cat{ margin-bottom: 22px; }
+  .bp-faq-cat-h{ margin-bottom: 12px; font-size: 22px; }
+  .bp-faq-list{ overflow: hidden; }
+  .bp-faq-item{ border-bottom: 1px solid rgba(255,255,255,.08); }
+  .bp-faq-item:last-child{ border-bottom: 0; }
+  .bp-faq-item.is-locked-faq{ opacity: .9; }
+  .bp-faq-q{
+    appearance: none; cursor: pointer; background: transparent; border: 0; color: #fff;
+    display: flex; align-items: center; gap: 12px;
+    width: 100%; padding: 18px 22px; font: inherit; text-align: left;
+    transition: background .18s ease;
+  }
+  .bp-faq-q:hover{ background: rgba(255,255,255,.04); }
+  .bp-faq-q-inner{ flex: 1; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .bp-faq-q-text{ font-size: 15px; font-weight: 500; line-height: 1.4; }
+  .bp-faq-mod-badge{
+    display: inline-flex; align-items: center;
+    font-size: 10px; font-weight: 700; letter-spacing: .14em;
+    padding: 4px 10px; border-radius: 999px;
+    background: rgba(255,210,0,.15); color: var(--bp-accent);
+    border: 1px solid rgba(255,210,0,.35);
+    white-space: nowrap;
+  }
+  .bp-faq-mod-badge.is-locked{
+    background: rgba(255,255,255,.06); color: var(--bp-text-mute);
+    border-color: rgba(255,255,255,.12);
+  }
+  .bp-faq-chev{ color: var(--bp-text-mute); transition: transform .25s ease, color .18s ease; flex: 0 0 auto; }
+  .bp-faq-item.is-open .bp-faq-chev{ transform: rotate(180deg); color: var(--bp-accent); }
+  .bp-faq-a-wrap{
+    max-height: 0; overflow: hidden;
+    transition: max-height .35s cubic-bezier(.22,.61,.36,1);
+  }
+  .bp-faq-item.is-open .bp-faq-a-wrap{ max-height: 600px; }
+  .bp-faq-a{
+    padding: 4px 22px 20px; color: var(--bp-text-soft); font-size: 14px; line-height: 1.6;
+  }
+  .bp-faq-module-ref{
+    display: flex; align-items: flex-start; gap: 8px; margin-top: 10px;
+    background: rgba(255,210,0,.06); border: 1px solid rgba(255,210,0,.2);
+    border-radius: 10px; padding: 10px 14px;
+    font-size: 13px; color: var(--bp-text-soft);
+  }
+  .bp-faq-locked-msg{
+    padding: 20px 28px 24px; display: flex; flex-direction: column; align-items: center; text-align: center;
+    gap: 4px;
+    background: rgba(255,255,255,.03); border-top: 1px solid rgba(255,255,255,.06);
+  }
+  .bp-faq-locked-title{ font-weight: 600; font-size: 14px; margin: 0; color: #fff; }
+  .bp-faq-locked-sub{ font-size: 13px; color: var(--bp-text-soft); margin: 4px 0 0; max-width: 480px; }
+  .bp-faq-q-row{ display: flex; align-items: center; }
+  .bp-faq-q-row .bp-faq-q{ flex: 1; }
+  .bp-faq-admin-btns{ display: flex; gap: 10px; padding: 0 14px; flex: 0 0 auto; }
+
+  /* ─── Congratulations modal ─────────────────────────────────────────── */
+  .bp-congrats-overlay{
+    z-index: 200;
+    background: rgba(7,24,43,.78); backdrop-filter: blur(20px) saturate(140%); -webkit-backdrop-filter: blur(20px) saturate(140%);
+  }
+  .bp-congrats{
+    position: relative; width: 100%; max-width: 560px;
+    background:
+      radial-gradient(120% 60% at 50% 0%, rgba(255,210,0,.25), transparent 60%),
+      rgba(15,32,55,.95);
+    border: 1px solid rgba(255,210,0,.35);
+    border-radius: 22px;
+    padding: 44px 36px 36px;
+    text-align: center;
+    box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.05) inset;
+    overflow: hidden;
+  }
+  .bp-congrats-badge{
+    width: 96px; height: 96px; border-radius: 50%; margin: 0 auto 18px;
+    background: linear-gradient(135deg, var(--bp-accent), #ffe14d);
+    color: var(--bp-navy-900);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 14px 40px rgba(255,210,0,.4), 0 0 0 6px rgba(255,210,0,.12);
+    animation: bp-pop .6s cubic-bezier(.22,1.4,.36,1);
+  }
+  @keyframes bp-pop{ from{ transform: scale(.4); opacity: 0; } to{ transform: scale(1); opacity: 1; } }
+  .bp-congrats-sub{
+    color: var(--bp-text-soft); font-size: 15px; line-height: 1.55;
+    max-width: 460px; margin: 8px auto 24px;
+  }
+  .bp-congrats-actions{ display: flex; flex-direction: column; gap: 10px; align-items: center; }
+  .bp-congrats-actions > .bp-btn{ width: 100%; max-width: 360px; }
+
+  .bp-congrats-confetti{ position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .bp-congrats-confetti span{
+    position: absolute; top: -10px; width: 8px; height: 12px;
+    border-radius: 1px; opacity: .9;
+    animation: bp-fall linear forwards;
+  }
+  @keyframes bp-fall{
+    0%   { transform: translateY(-20px) rotate(0deg);   opacity: 0; }
+    10%  { opacity: 1; }
+    100% { transform: translateY(560px) rotate(720deg); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- App scripts -->
+<script src="data.js"></script>
+<script>
+// ─── Module category icons (yellow, learning-themed) ─────────────────────────
+window.BP_MOD_ICON = function(category) {
+  const icons = {
+    "Foundations": "<svg viewBox=\"0 0 120 120\" width=\"100%\" height=\"100%\">\n    <g opacity=\"0.8\" stroke=\"#FFD200\" strokeWidth=\"4.5\" strokeLinecap=\"round\" strokeLinejoin=\"round\" fill=\"none\">\n      <!-- Lightbulb body -->\n      <path d=\"M60 20 C42 20 30 32 30 48 C30 60 38 70 44 76 L44 88 L76 88 L76 76 C82 70 90 60 90 48 C90 32 78 20 60 20Z\" fill=\"rgba(255,210,0,0.15)\"/>\n      <!-- Base stripes -->\n      <line x1=\"46\" y1=\"88\" x2=\"74\" y2=\"88\"/>\n      <line x1=\"48\" y1=\"95\" x2=\"72\" y2=\"95\"/>\n      <line x1=\"52\" y1=\"102\" x2=\"68\" y2=\"102\"/>\n      <!-- Filament -->\n      <path d=\"M52 62 L60 50 L68 62\" fill=\"none\"/>\n    </g>\n  </svg>",
+    "Getting Started": "<svg viewBox=\"0 0 120 120\" width=\"100%\" height=\"100%\">\n    <g opacity=\"0.8\" stroke=\"#FFD200\" strokeWidth=\"4.5\" strokeLinecap=\"round\" strokeLinejoin=\"round\" fill=\"none\">\n      <!-- Open book -->\n      <path d=\"M20 30 L20 90 L60 80 L60 30 Z\" fill=\"rgba(255,210,0,0.12)\"/>\n      <path d=\"M100 30 L100 90 L60 80 L60 30 Z\" fill=\"rgba(255,210,0,0.12)\"/>\n      <line x1=\"60\" y1=\"30\" x2=\"60\" y2=\"80\"/>\n      <!-- Pages lines left -->\n      <line x1=\"28\" y1=\"46\" x2=\"54\" y2=\"42\"/>\n      <line x1=\"28\" y1=\"56\" x2=\"54\" y2=\"52\"/>\n      <line x1=\"28\" y1=\"66\" x2=\"54\" y2=\"62\"/>\n      <!-- Pages lines right -->\n      <line x1=\"92\" y1=\"46\" x2=\"66\" y2=\"42\"/>\n      <line x1=\"92\" y1=\"56\" x2=\"66\" y2=\"52\"/>\n      <line x1=\"92\" y1=\"66\" x2=\"66\" y2=\"62\"/>\n      <!-- Spine -->\n      <path d=\"M20 30 C35 25 45 25 60 30 C75 25 85 25 100 30\" fill=\"none\"/>\n    </g>\n  </svg>",
+    "Apps & Extensions": "<svg viewBox=\"0 0 120 120\" width=\"100%\" height=\"100%\">\n    <g opacity=\"0.8\" stroke=\"#FFD200\" strokeWidth=\"4.5\" strokeLinecap=\"round\" strokeLinejoin=\"round\" fill=\"none\">\n      <!-- Puzzle piece -->\n      <path d=\"M20 20 L55 20 L55 35 C55 35 65 28 70 35 C75 42 65 48 55 42 L55 65 L70 65 C70 65 63 75 70 80 C77 85 83 75 77 65 L100 65 L100 20 Z\" fill=\"rgba(255,210,0,0.12)\"/>\n      <!-- Connection node -->\n      <circle cx=\"60\" cy=\"88\" r=\"8\" fill=\"rgba(255,210,0,0.2)\"/>\n      <line x1=\"60\" y1=\"80\" x2=\"60\" y2=\"72\"/>\n      <!-- Links -->\n      <line x1=\"35\" y1=\"88\" x2=\"52\" y2=\"88\"/>\n      <line x1=\"68\" y1=\"88\" x2=\"85\" y2=\"88\"/>\n      <circle cx=\"28\" cy=\"88\" r=\"7\"/>\n      <circle cx=\"92\" cy=\"88\" r=\"7\"/>\n    </g>\n  </svg>",
+    "Advanced": "<svg viewBox=\"0 0 120 120\" width=\"100%\" height=\"100%\">\n    <g opacity=\"0.8\" stroke=\"#FFD200\" strokeWidth=\"4\" strokeLinecap=\"round\" strokeLinejoin=\"round\" fill=\"none\">\n      <!-- Graduation cap -->\n      <polygon points=\"60,22 100,42 60,58 20,42\" fill=\"rgba(255,210,0,0.15)\"/>\n      <path d=\"M35 50 L35 78 C35 78 46 90 60 90 C74 90 85 78 85 78 L85 50\" fill=\"rgba(255,210,0,0.1)\"/>\n      <!-- Tassel -->\n      <line x1=\"100\" y1=\"42\" x2=\"100\" y2=\"62\"/>\n      <line x1=\"100\" y1=\"62\" x2=\"94\" y2=\"72\"/>\n      <line x1=\"100\" y1=\"62\" x2=\"100\" y2=\"76\"/>\n      <line x1=\"100\" y1=\"62\" x2=\"106\" y2=\"72\"/>\n    </g>\n  </svg>",
+  };
+  return icons[category] || "<svg viewBox=\"0 0 120 120\" width=\"100%\" height=\"100%\">\n  <g opacity=\"0.8\" stroke=\"#FFD200\" strokeWidth=\"4.5\" strokeLinecap=\"round\" strokeLinejoin=\"round\" fill=\"none\">\n    <rect x=\"25\" y=\"25\" width=\"70\" height=\"70\" rx=\"8\" fill=\"rgba(255,210,0,0.1)\"/>\n    <line x1=\"38\" y1=\"45\" x2=\"82\" y2=\"45\"/>\n    <line x1=\"38\" y1=\"58\" x2=\"82\" y2=\"58\"/>\n    <line x1=\"38\" y1=\"71\" x2=\"65\" y2=\"71\"/>\n    <circle cx=\"78\" cy=\"78\" r=\"14\" fill=\"rgba(255,210,0,0.2)\"/>\n    <polyline points=\"73,78 77,82 85,74\"/>\n  </g>\n</svg>";
+};
+</script>
+<script type="text/babel" id="bp-bundle">
+// ─── Global React hooks (single destructuring for the whole bundle) ────────
+const { useState, useEffect, useMemo, useRef, useCallback } = React;
+
+
+// tweaks-panel.jsx
+// Reusable Tweaks shell + form-control helpers.
+//
+// Owns the host protocol (listens for __activate_edit_mode / __deactivate_edit_mode,
+// posts __edit_mode_available / __edit_mode_set_keys / __edit_mode_dismissed) so
+// individual prototypes don't re-roll it. Ships a consistent set of controls so you
+// don't hand-draw <input type="range">, segmented radios, steppers, etc.
+//
+// Usage (in an HTML file that loads React + Babel):
+//
+//   const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+//     "primaryColor": "#D97757",
+//     "palette": ["#D97757", "#29261b", "#f6f4ef"],
+//     "fontSize": 16,
+//     "density": "regular",
+//     "dark": false
+//   }/*EDITMODE-END*/;
+//
+//   function App() {
+//     const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+//     return (
+//       <div style={{ fontSize: t.fontSize, color: t.primaryColor }}>
+//         Hello
+//         <TweaksPanel>
+//           <TweakSection label="Typography" />
+//           <TweakSlider label="Font size" value={t.fontSize} min={10} max={32} unit="px"
+//                        onChange={(v) => setTweak('fontSize', v)} />
+//           <TweakRadio  label="Density" value={t.density}
+//                        options={['compact', 'regular', 'comfy']}
+//                        onChange={(v) => setTweak('density', v)} />
+//           <TweakSection label="Theme" />
+//           <TweakColor  label="Primary" value={t.primaryColor}
+//                        options={['#D97757', '#2A6FDB', '#1F8A5B', '#7A5AE0']}
+//                        onChange={(v) => setTweak('primaryColor', v)} />
+//           <TweakColor  label="Palette" value={t.palette}
+//                        options={[['#D97757', '#29261b', '#f6f4ef'],
+//                                  ['#475569', '#0f172a', '#f1f5f9']]}
+//                        onChange={(v) => setTweak('palette', v)} />
+//           <TweakToggle label="Dark mode" value={t.dark}
+//                        onChange={(v) => setTweak('dark', v)} />
+//         </TweaksPanel>
+//       </div>
+//     );
+//   }
+//
+// ─────────────────────────────────────────────────────────────────────────────
+
+const __TWEAKS_STYLE = `
+  .twk-panel{position:fixed;right:16px;bottom:16px;z-index:2147483646;width:280px;
+    max-height:calc(100vh - 32px);display:flex;flex-direction:column;
+    transform:scale(var(--dc-inv-zoom,1));transform-origin:bottom right;
+    background:rgba(250,249,247,.78);color:#29261b;
+    -webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);
+    border:.5px solid rgba(255,255,255,.6);border-radius:14px;
+    box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 12px 40px rgba(0,0,0,.18);
+    font:11.5px/1.4 ui-sans-serif,system-ui,-apple-system,sans-serif;overflow:hidden}
+  .twk-hd{display:flex;align-items:center;justify-content:space-between;
+    padding:10px 8px 10px 14px;cursor:move;user-select:none}
+  .twk-hd b{font-size:12px;font-weight:600;letter-spacing:.01em}
+  .twk-x{appearance:none;border:0;background:transparent;color:rgba(41,38,27,.55);
+    width:22px;height:22px;border-radius:6px;cursor:default;font-size:13px;line-height:1}
+  .twk-x:hover{background:rgba(0,0,0,.06);color:#29261b}
+  .twk-body{padding:2px 14px 14px;display:flex;flex-direction:column;gap:10px;
+    overflow-y:auto;overflow-x:hidden;min-height:0;
+    scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.15) transparent}
+  .twk-body::-webkit-scrollbar{width:8px}
+  .twk-body::-webkit-scrollbar-track{background:transparent;margin:2px}
+  .twk-body::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:4px;
+    border:2px solid transparent;background-clip:content-box}
+  .twk-body::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.25);
+    border:2px solid transparent;background-clip:content-box}
+  .twk-row{display:flex;flex-direction:column;gap:5px}
+  .twk-row-h{flex-direction:row;align-items:center;justify-content:space-between;gap:10px}
+  .twk-lbl{display:flex;justify-content:space-between;align-items:baseline;
+    color:rgba(41,38,27,.72)}
+  .twk-lbl>span:first-child{font-weight:500}
+  .twk-val{color:rgba(41,38,27,.5);font-variant-numeric:tabular-nums}
+
+  .twk-sect{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+    color:rgba(41,38,27,.45);padding:10px 0 0}
+  .twk-sect:first-child{padding-top:0}
+
+  .twk-field{appearance:none;box-sizing:border-box;width:100%;min-width:0;height:26px;padding:0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;
+    background:rgba(255,255,255,.6);color:inherit;font:inherit;outline:none}
+  .twk-field:focus{border-color:rgba(0,0,0,.25);background:rgba(255,255,255,.85)}
+  select.twk-field{padding-right:22px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='rgba(0,0,0,.5)' d='M0 0h10L5 6z'/></svg>");
+    background-repeat:no-repeat;background-position:right 8px center}
+
+  .twk-slider{appearance:none;-webkit-appearance:none;width:100%;height:4px;margin:6px 0;
+    border-radius:999px;background:rgba(0,0,0,.12);outline:none}
+  .twk-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+    width:14px;height:14px;border-radius:50%;background:#fff;
+    border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+  .twk-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;
+    background:#fff;border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+
+  .twk-seg{position:relative;display:flex;padding:2px;border-radius:8px;
+    background:rgba(0,0,0,.06);user-select:none}
+  .twk-seg-thumb{position:absolute;top:2px;bottom:2px;border-radius:6px;
+    background:rgba(255,255,255,.9);box-shadow:0 1px 2px rgba(0,0,0,.12);
+    transition:left .15s cubic-bezier(.3,.7,.4,1),width .15s}
+  .twk-seg.dragging .twk-seg-thumb{transition:none}
+  .twk-seg button{appearance:none;position:relative;z-index:1;flex:1;border:0;
+    background:transparent;color:inherit;font:inherit;font-weight:500;min-height:22px;
+    border-radius:6px;cursor:default;padding:4px 6px;line-height:1.2;
+    overflow-wrap:anywhere}
+
+  .twk-toggle{position:relative;width:32px;height:18px;border:0;border-radius:999px;
+    background:rgba(0,0,0,.15);transition:background .15s;cursor:default;padding:0}
+  .twk-toggle[data-on="1"]{background:#34c759}
+  .twk-toggle i{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;
+    background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+  .twk-toggle[data-on="1"] i{transform:translateX(14px)}
+
+  .twk-num{display:flex;align-items:center;box-sizing:border-box;min-width:0;height:26px;padding:0 0 0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;background:rgba(255,255,255,.6)}
+  .twk-num-lbl{font-weight:500;color:rgba(41,38,27,.6);cursor:ew-resize;
+    user-select:none;padding-right:8px}
+  .twk-num input{flex:1;min-width:0;height:100%;border:0;background:transparent;
+    font:inherit;font-variant-numeric:tabular-nums;text-align:right;padding:0 8px 0 0;
+    outline:none;color:inherit;-moz-appearance:textfield}
+  .twk-num input::-webkit-inner-spin-button,.twk-num input::-webkit-outer-spin-button{
+    -webkit-appearance:none;margin:0}
+  .twk-num-unit{padding-right:8px;color:rgba(41,38,27,.45)}
+
+  .twk-btn{appearance:none;height:26px;padding:0 12px;border:0;border-radius:7px;
+    background:rgba(0,0,0,.78);color:#fff;font:inherit;font-weight:500;cursor:default}
+  .twk-btn:hover{background:rgba(0,0,0,.88)}
+  .twk-btn.secondary{background:rgba(0,0,0,.06);color:inherit}
+  .twk-btn.secondary:hover{background:rgba(0,0,0,.1)}
+
+  .twk-swatch{appearance:none;-webkit-appearance:none;width:56px;height:22px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:6px;padding:0;cursor:default;
+    background:transparent;flex-shrink:0}
+  .twk-swatch::-webkit-color-swatch-wrapper{padding:0}
+  .twk-swatch::-webkit-color-swatch{border:0;border-radius:5.5px}
+  .twk-swatch::-moz-color-swatch{border:0;border-radius:5.5px}
+
+  .twk-chips{display:flex;gap:6px}
+  .twk-chip{position:relative;appearance:none;flex:1;min-width:0;height:46px;
+    padding:0;border:0;border-radius:6px;overflow:hidden;cursor:default;
+    box-shadow:0 0 0 .5px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.06);
+    transition:transform .12s cubic-bezier(.3,.7,.4,1),box-shadow .12s}
+  .twk-chip:hover{transform:translateY(-1px);
+    box-shadow:0 0 0 .5px rgba(0,0,0,.18),0 4px 10px rgba(0,0,0,.12)}
+  .twk-chip[data-on="1"]{box-shadow:0 0 0 1.5px rgba(0,0,0,.85),
+    0 2px 6px rgba(0,0,0,.15)}
+  .twk-chip>span{position:absolute;top:0;bottom:0;right:0;width:34%;
+    display:flex;flex-direction:column;box-shadow:-1px 0 0 rgba(0,0,0,.1)}
+  .twk-chip>span>i{flex:1;box-shadow:0 -1px 0 rgba(0,0,0,.1)}
+  .twk-chip>span>i:first-child{box-shadow:none}
+  .twk-chip svg{position:absolute;top:6px;left:6px;width:13px;height:13px;
+    filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
+`;
+
+// ── useTweaks ───────────────────────────────────────────────────────────────
+// Single source of truth for tweak values. setTweak persists via the host
+// (__edit_mode_set_keys → host rewrites the EDITMODE block on disk).
+function useTweaks(defaults) {
+  const [values, setValues] = React.useState(defaults);
+  // Accepts either setTweak('key', value) or setTweak({ key: value, ... }) so a
+  // useState-style call doesn't write a "[object Object]" key into the persisted
+  // JSON block.
+  const setTweak = React.useCallback((keyOrEdits, val) => {
+    const edits = typeof keyOrEdits === 'object' && keyOrEdits !== null
+      ? keyOrEdits : { [keyOrEdits]: val };
+    setValues((prev) => ({ ...prev, ...edits }));
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits }, '*');
+    // Same-window signal so in-page listeners (deck-stage rail thumbnails)
+    // can react — the parent message only reaches the host, not peers.
+    window.dispatchEvent(new CustomEvent('tweakchange', { detail: edits }));
+  }, []);
+  return [values, setTweak];
+}
+
+// ── TweaksPanel ─────────────────────────────────────────────────────────────
+// Floating shell. Registers the protocol listener BEFORE announcing
+// availability — if the announce ran first, the host's activate could land
+// before our handler exists and the toolbar toggle would silently no-op.
+// The close button posts __edit_mode_dismissed so the host's toolbar toggle
+// flips off in lockstep; the host echoes __deactivate_edit_mode back which
+// is what actually hides the panel.
+function TweaksPanel({ title = 'Tweaks', children }) {
+  const [open, setOpen] = React.useState(false);
+  const dragRef = React.useRef(null);
+  const offsetRef = React.useRef({ x: 16, y: 16 });
+  const PAD = 16;
+
+  const clampToViewport = React.useCallback(() => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const w = panel.offsetWidth, h = panel.offsetHeight;
+    const maxRight = Math.max(PAD, window.innerWidth - w - PAD);
+    const maxBottom = Math.max(PAD, window.innerHeight - h - PAD);
+    offsetRef.current = {
+      x: Math.min(maxRight, Math.max(PAD, offsetRef.current.x)),
+      y: Math.min(maxBottom, Math.max(PAD, offsetRef.current.y)),
+    };
+    panel.style.right = offsetRef.current.x + 'px';
+    panel.style.bottom = offsetRef.current.y + 'px';
+  }, []);
+
+  React.useEffect(() => {
+    if (!open) return;
+    clampToViewport();
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', clampToViewport);
+      return () => window.removeEventListener('resize', clampToViewport);
+    }
+    const ro = new ResizeObserver(clampToViewport);
+    ro.observe(document.documentElement);
+    return () => ro.disconnect();
+  }, [open, clampToViewport]);
+
+  React.useEffect(() => {
+    const onMsg = (e) => {
+      const t = e?.data?.type;
+      if (t === '__activate_edit_mode') setOpen(true);
+      else if (t === '__deactivate_edit_mode') setOpen(false);
+    };
+    window.addEventListener('message', onMsg);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  const dismiss = () => {
+    setOpen(false);
+    window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*');
+  };
+
+  const onDragStart = (e) => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const r = panel.getBoundingClientRect();
+    const sx = e.clientX, sy = e.clientY;
+    const startRight = window.innerWidth - r.right;
+    const startBottom = window.innerHeight - r.bottom;
+    const move = (ev) => {
+      offsetRef.current = {
+        x: startRight - (ev.clientX - sx),
+        y: startBottom - (ev.clientY - sy),
+      };
+      clampToViewport();
+    };
+    const up = () => {
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseup', up);
+    };
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+  };
+
+  if (!open) return null;
+  return (
+    <>
+      <style>{__TWEAKS_STYLE}</style>
+      <div ref={dragRef} className="twk-panel" data-omelette-chrome=""
+           style={{ right: offsetRef.current.x, bottom: offsetRef.current.y }}>
+        <div className="twk-hd" onMouseDown={onDragStart}>
+          <b>{title}</b>
+          <button className="twk-x" aria-label="Close tweaks"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={dismiss}>✕</button>
+        </div>
+        <div className="twk-body">
+          {children}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── Layout helpers ──────────────────────────────────────────────────────────
+
+function TweakSection({ label, children }) {
+  return (
+    <>
+      <div className="twk-sect">{label}</div>
+      {children}
+    </>
+  );
+}
+
+function TweakRow({ label, value, children, inline = false }) {
+  return (
+    <div className={inline ? 'twk-row twk-row-h' : 'twk-row'}>
+      <div className="twk-lbl">
+        <span>{label}</span>
+        {value != null && <span className="twk-val">{value}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// ── Controls ────────────────────────────────────────────────────────────────
+
+function TweakSlider({ label, value, min = 0, max = 100, step = 1, unit = '', onChange }) {
+  return (
+    <TweakRow label={label} value={`${value}${unit}`}>
+      <input type="range" className="twk-slider" min={min} max={max} step={step}
+             value={value} onChange={(e) => onChange(Number(e.target.value))} />
+    </TweakRow>
+  );
+}
+
+function TweakToggle({ label, value, onChange }) {
+  return (
+    <div className="twk-row twk-row-h">
+      <div className="twk-lbl"><span>{label}</span></div>
+      <button type="button" className="twk-toggle" data-on={value ? '1' : '0'}
+              role="switch" aria-checked={!!value}
+              onClick={() => onChange(!value)}><i /></button>
+    </div>
+  );
+}
+
+function TweakRadio({ label, value, options, onChange }) {
+  const trackRef = React.useRef(null);
+  const [dragging, setDragging] = React.useState(false);
+  // The active value is read by pointer-move handlers attached for the lifetime
+  // of a drag — ref it so a stale closure doesn't fire onChange for every move.
+  const valueRef = React.useRef(value);
+  valueRef.current = value;
+
+  // Segments wrap mid-word once per-segment width runs out. The track is
+  // ~248px (280 panel − 28 body pad − 4 seg pad), each button loses 12px
+  // to its own padding, and 11.5px system-ui averages ~6.3px/char — so 2
+  // options fit ~16 chars each, 3 fit ~10. Past that (or >3 options), fall
+  // back to a dropdown rather than wrap.
+  const labelLen = (o) => String(typeof o === 'object' ? o.label : o).length;
+  const maxLen = options.reduce((m, o) => Math.max(m, labelLen(o)), 0);
+  const fitsAsSegments = maxLen <= ({ 2: 16, 3: 10 }[options.length] ?? 0);
+  if (!fitsAsSegments) {
+    // <select> emits strings — map back to the original option value so the
+    // fallback stays type-preserving (numbers, booleans) like the segment path.
+    const resolve = (s) => {
+      const m = options.find((o) => String(typeof o === 'object' ? o.value : o) === s);
+      return m === undefined ? s : typeof m === 'object' ? m.value : m;
+    };
+    return <TweakSelect label={label} value={value} options={options}
+                        onChange={(s) => onChange(resolve(s))} />;
+  }
+  const opts = options.map((o) => (typeof o === 'object' ? o : { value: o, label: o }));
+  const idx = Math.max(0, opts.findIndex((o) => o.value === value));
+  const n = opts.length;
+
+  const segAt = (clientX) => {
+    const r = trackRef.current.getBoundingClientRect();
+    const inner = r.width - 4;
+    const i = Math.floor(((clientX - r.left - 2) / inner) * n);
+    return opts[Math.max(0, Math.min(n - 1, i))].value;
+  };
+
+  const onPointerDown = (e) => {
+    setDragging(true);
+    const v0 = segAt(e.clientX);
+    if (v0 !== valueRef.current) onChange(v0);
+    const move = (ev) => {
+      if (!trackRef.current) return;
+      const v = segAt(ev.clientX);
+      if (v !== valueRef.current) onChange(v);
+    };
+    const up = () => {
+      setDragging(false);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
+  return (
+    <TweakRow label={label}>
+      <div ref={trackRef} role="radiogroup" onPointerDown={onPointerDown}
+           className={dragging ? 'twk-seg dragging' : 'twk-seg'}>
+        <div className="twk-seg-thumb"
+             style={{ left: `calc(2px + ${idx} * (100% - 4px) / ${n})`,
+                      width: `calc((100% - 4px) / ${n})` }} />
+        {opts.map((o) => (
+          <button key={o.value} type="button" role="radio" aria-checked={o.value === value}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </TweakRow>
+  );
+}
+
+function TweakSelect({ label, value, options, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <select className="twk-field" value={value} onChange={(e) => onChange(e.target.value)}>
+        {options.map((o) => {
+          const v = typeof o === 'object' ? o.value : o;
+          const l = typeof o === 'object' ? o.label : o;
+          return <option key={v} value={v}>{l}</option>;
+        })}
+      </select>
+    </TweakRow>
+  );
+}
+
+function TweakText({ label, value, placeholder, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <input className="twk-field" type="text" value={value} placeholder={placeholder}
+             onChange={(e) => onChange(e.target.value)} />
+    </TweakRow>
+  );
+}
+
+function TweakNumber({ label, value, min, max, step = 1, unit = '', onChange }) {
+  const clamp = (n) => {
+    if (min != null && n < min) return min;
+    if (max != null && n > max) return max;
+    return n;
+  };
+  const startRef = React.useRef({ x: 0, val: 0 });
+  const onScrubStart = (e) => {
+    e.preventDefault();
+    startRef.current = { x: e.clientX, val: value };
+    const decimals = (String(step).split('.')[1] || '').length;
+    const move = (ev) => {
+      const dx = ev.clientX - startRef.current.x;
+      const raw = startRef.current.val + dx * step;
+      const snapped = Math.round(raw / step) * step;
+      onChange(clamp(Number(snapped.toFixed(decimals))));
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+  return (
+    <div className="twk-num">
+      <span className="twk-num-lbl" onPointerDown={onScrubStart}>{label}</span>
+      <input type="number" value={value} min={min} max={max} step={step}
+             onChange={(e) => onChange(clamp(Number(e.target.value)))} />
+      {unit && <span className="twk-num-unit">{unit}</span>}
+    </div>
+  );
+}
+
+// Relative-luminance contrast pick — checkmarks drawn over a swatch need to
+// read on both #111 and #fafafa without per-option configuration. Hex input
+// only (#rgb / #rrggbb); named or rgb()/hsl() colors fall through to "light".
+function __twkIsLight(hex) {
+  const h = String(hex).replace('#', '');
+  const x = h.length === 3 ? h.replace(/./g, (c) => c + c) : h.padEnd(6, '0');
+  const n = parseInt(x.slice(0, 6), 16);
+  if (Number.isNaN(n)) return true;
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return r * 299 + g * 587 + b * 114 > 148000;
+}
+
+const __TwkCheck = ({ light }) => (
+  <svg viewBox="0 0 14 14" aria-hidden="true">
+    <path d="M3 7.2 5.8 10 11 4.2" fill="none" strokeWidth="2.2"
+          strokeLinecap="round" strokeLinejoin="round"
+          stroke={light ? 'rgba(0,0,0,.78)' : '#fff'} />
+  </svg>
+);
+
+// TweakColor — curated color/palette picker. Each option is either a single
+// hex string or an array of 1-5 hex strings; the card adapts — a lone color
+// renders solid, a palette renders colors[0] as the hero (left ~2/3) with the
+// rest stacked in a sharp column on the right. onChange emits the
+// option in the shape it was passed (string stays string, array stays array).
+// Without options it falls back to the native color input for back-compat.
+function TweakColor({ label, value, options, onChange }) {
+  if (!options || !options.length) {
+    return (
+      <div className="twk-row twk-row-h">
+        <div className="twk-lbl"><span>{label}</span></div>
+        <input type="color" className="twk-swatch" value={value}
+               onChange={(e) => onChange(e.target.value)} />
+      </div>
+    );
+  }
+  // Native <input type=color> emits lowercase hex per the HTML spec, so
+  // compare case-insensitively. String() guards JSON.stringify(undefined),
+  // which returns the primitive undefined (no .toLowerCase).
+  const key = (o) => String(JSON.stringify(o)).toLowerCase();
+  const cur = key(value);
+  return (
+    <TweakRow label={label}>
+      <div className="twk-chips" role="radiogroup">
+        {options.map((o, i) => {
+          const colors = Array.isArray(o) ? o : [o];
+          const [hero, ...rest] = colors;
+          const sup = rest.slice(0, 4);
+          const on = key(o) === cur;
+          return (
+            <button key={i} type="button" className="twk-chip" role="radio"
+                    aria-checked={on} data-on={on ? '1' : '0'}
+                    aria-label={colors.join(', ')} title={colors.join(' · ')}
+                    style={{ background: hero }}
+                    onClick={() => onChange(o)}>
+              {sup.length > 0 && (
+                <span>
+                  {sup.map((c, j) => <i key={j} style={{ background: c }} />)}
+                </span>
+              )}
+              {on && <__TwkCheck light={__twkIsLight(hero)} />}
+            </button>
+          );
+        })}
+      </div>
+    </TweakRow>
+  );
+}
+
+function TweakButton({ label, onClick, secondary = false }) {
+  return (
+    <button type="button" className={secondary ? 'twk-btn secondary' : 'twk-btn'}
+            onClick={onClick}>{label}</button>
+  );
+}
+
+Object.assign(window, {
+  useTweaks, TweaksPanel, TweakSection, TweakRow,
+  TweakSlider, TweakToggle, TweakRadio, TweakSelect,
+  TweakText, TweakNumber, TweakColor, TweakButton,
+});
+
+
+// ─────────────────────────────────────────────
+
+// BrightPath LMS — shared components
+// Globals: BPLogo, Background, Header, GlassCard, GlassButton, IconBtn, Pill, ProgressBar, FadeIn, useAnim
+
+// ─── Animation primitive ────────────────────────────────────────────────────
+function FadeIn({ delay = 0, y = 12, children, as: As = "div", style, intensity = "medium", ...rest }) {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    if (intensity === "none") { setOn(true); return; }
+    const id = requestAnimationFrame(() => setTimeout(() => setOn(true), delay));
+    return () => cancelAnimationFrame(id);
+  }, [delay, intensity]);
+  const dur = intensity === "subtle" ? 520 : intensity === "cinematic" ? 900 : 700;
+  const yy  = intensity === "subtle" ? Math.min(y, 8) : intensity === "cinematic" ? y + 8 : y;
+  return (
+    <As style={{
+      opacity: on ? 1 : 0,
+      transform: on ? "translateY(0)" : `translateY(${yy}px)`,
+      transition: `opacity ${dur}ms cubic-bezier(.22,.61,.36,1), transform ${dur}ms cubic-bezier(.22,.61,.36,1)`,
+      ...style,
+    }} {...rest}>{children}</As>
+  );
+}
+
+// ─── BrightPath Logo — crisp SVG (matches the official JPEG exactly) ─────────
+function BPLogo({ size = 36, wordmark = true, mark = "Learn" }) {
+  return (
+    <div style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
+      <img src="assets/brightpath-logo.png" alt="BrightPath" width={size} height={size}
+        style={{ width: size, height: size, objectFit: "contain", display: "block", flex: "0 0 auto", borderRadius: size * 0.12 }}/>
+      {wordmark && (
+        <span style={{
+          fontFamily: "var(--bp-serif)", color: "#fff",
+          fontSize: size * 0.52, fontWeight: 600, letterSpacing: "0.005em", lineHeight: 1,
+          whiteSpace: "nowrap",
+        }}>
+          BrightPath{mark ? <span style={{opacity:.72, fontStyle:"italic", fontWeight:500, marginLeft:7}}>{mark}</span> : null}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ─── Background ────────────────────────────────────────────────────────────
+// Variants: 'photo' | 'gradient' | 'mix' (mix uses photo on auth/home, gradient elsewhere)
+function Background({ variant = "photo", showPhoto = true }) {
+  // Mountain photo — public unsplash CC0-style URL with sizing params
+  const photoUrl = "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=2400&q=80";
+  return (
+    <div className="bp-bg" aria-hidden="true">
+      {variant !== "gradient" && showPhoto && (
+        <div className="bp-bg-photo" style={{
+          backgroundImage: `url("${photoUrl}")`,
+        }} />
+      )}
+      <div className="bp-bg-tint" />
+      <div className="bp-bg-vignette" />
+    </div>
+  );
+}
+
+// ─── Header / top nav ──────────────────────────────────────────────────────
+function Header({ role, currentUser, view, onNavigate, onLogout, adminTab, setAdminTab }) {
+  const learnerLinks = [
+    { id: "dashboard", label: "Dashboard" },
+    { id: "modules",   label: "All Modules" },
+    { id: "certificates", label: "My Certificates" },
+    { id: "faq",       label: "FAQ" },
+  ];
+  const adminLinks = [
+    { id: "modules",      label: "Modules" },
+    { id: "learners",     label: "Learners" },
+    { id: "progress",     label: "Progress" },
+    { id: "certificates", label: "Certificates" },
+    { id: "faq",          label: "FAQ" },
+  ];
+  const links = role === "admin" ? adminLinks : learnerLinks;
+  const active = role === "admin" ? adminTab : (view === "module" || view === "quiz" || view === "certificate" ? "dashboard" : view);
+
+  return (
+    <header className="bp-header">
+      <div className="bp-header-inner">
+        <button className="bp-logobtn" onClick={() => role === "admin" ? setAdminTab("modules") : onNavigate({ view: "dashboard" })}>
+          <BPLogo size={34} />
+        </button>
+        <nav className="bp-nav">
+          {links.map(l => (
+            <button key={l.id}
+              className={"bp-navlink " + (active === l.id ? "is-active" : "")}
+              onClick={() => {
+                if (role === "admin") setAdminTab(l.id);
+                else onNavigate({ view: l.id });
+              }}>
+              {l.label}
+            </button>
+          ))}
+        </nav>
+        <div className="bp-header-right">
+          {role === "admin" && <span className="bp-rolepill">ADMIN</span>}
+          <div className="bp-user">
+            <div className="bp-avatar">{(currentUser?.name || "U").split(" ").map(s=>s[0]).slice(0,2).join("")}</div>
+            <div className="bp-user-meta">
+              <div className="bp-user-name">{currentUser?.name}</div>
+              <div className="bp-user-email">{currentUser?.email}</div>
+            </div>
+          </div>
+          <button className="bp-iconbtn" onClick={onLogout} title="Sign out" aria-label="Sign out">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+// ─── Glass card ────────────────────────────────────────────────────────────
+function GlassCard({ children, style, className = "", padding = 24, ...rest }) {
+  return (
+    <div className={"bp-glass " + className} style={{ padding, ...style }} {...rest}>
+      {children}
+    </div>
+  );
+}
+
+// ─── Buttons ───────────────────────────────────────────────────────────────
+function GlassButton({ children, variant = "primary", size = "md", style, ...rest }) {
+  return (
+    <button className={`bp-btn bp-btn-${variant} bp-btn-${size}`} style={style} {...rest}>{children}</button>
+  );
+}
+
+// ─── Pill / tag ────────────────────────────────────────────────────────────
+function Pill({ children, tone = "neutral", style }) {
+  return <span className={`bp-pill bp-pill-${tone}`} style={style}>{children}</span>;
+}
+
+// ─── Progress bar ──────────────────────────────────────────────────────────
+function ProgressBar({ value, height = 8, showLabel = false }) {
+  return (
+    <div className="bp-pb-wrap">
+      <div className="bp-pb" style={{ height }}>
+        <div className="bp-pb-fill" style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
+      </div>
+      {showLabel && <span className="bp-pb-label">{Math.round(value)}%</span>}
+    </div>
+  );
+}
+
+// Expose globals so other Babel scripts can use them
+Object.assign(window, { FadeIn, BPLogo, Background, Header, GlassCard, GlassButton, Pill, ProgressBar });
+
+
+// ─────────────────────────────────────────────
+
+// Login screen — Google domain SSO mock (@brightpath-mn.com | @s360team.com)
+const ALLOWED_DOMAINS = ["brightpath-mn.com", "s360team.com"];
+
+function LoginScreen({ onAuth, prefillEmail }) {
+  const [email, setEmail] = useState(prefillEmail || "");
+  const [pw, setPw]       = useState("");
+  const [step, setStep]   = useState("idle"); // idle | google | error
+  const [err, setErr]     = useState("");
+
+  const validateDomain = (em) => {
+    const lower = em.trim().toLowerCase();
+    return ALLOWED_DOMAINS.some(d => lower.endsWith("@" + d));
+  };
+
+  const domainLabel = "@brightpath-mn.com or @s360team.com";
+
+  function doGoogleSSO() {
+    setErr("");
+    if (!email) { setErr("Enter your work email to continue."); return; }
+    if (!validateDomain(email)) {
+      setErr("Access is restricted to @brightpath-mn.com and @s360team.com accounts.");
+      return;
+    }
+    setStep("google");
+    setTimeout(() => {
+      const isAdmin = email.trim().toLowerCase().startsWith("admin@");
+      onAuth({ email: email.trim().toLowerCase(), role: isAdmin ? "admin" : "learner" });
+    }, 1200);
+  }
+
+  function doPassword(e) {
+    e.preventDefault();
+    setErr("");
+    if (!validateDomain(email)) {
+      setErr("Access is restricted to @brightpath-mn.com and @s360team.com accounts.");
+      return;
+    }
+    if (pw.length < 4) { setErr("Password required."); return; }
+    const isAdmin = email.trim().toLowerCase().startsWith("admin@");
+    onAuth({ email: email.trim().toLowerCase(), role: isAdmin ? "admin" : "learner" });
+  }
+
+  return (
+    <div className="bp-login-wrap">
+      <FadeIn delay={120}>
+        <GlassCard className="bp-login-card" padding={44}>
+          <div className="bp-login-logo">
+            <BPLogo size={56} wordmark={false}/>
+          </div>
+          <FadeIn delay={240}>
+            <div className="bp-login-eyebrow">BrightPath Learn</div>
+            <h1 className="bp-h-display">Sign in to continue your path.</h1>
+            <p className="bp-login-sub">
+              Use your work Google Workspace account. Access is limited to staff and administrators at{" "}
+              <b>@brightpath-mn.com</b> or <b>@s360team.com</b>.
+            </p>
+          </FadeIn>
+
+          <FadeIn delay={420}>
+            <form className="bp-login-form" onSubmit={doPassword}>
+              <label className="bp-field">
+                <span className="bp-field-lbl">Work email</span>
+                <input
+                  className="bp-input"
+                  type="email"
+                  placeholder="you@brightpath-mn.com or you@s360team.com"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  autoFocus
+                />
+              </label>
+              <label className="bp-field">
+                <span className="bp-field-lbl">Password</span>
+                <input
+                  className="bp-input"
+                  type="password"
+                  placeholder="••••••••"
+                  value={pw}
+                  onChange={e => setPw(e.target.value)}
+                />
+              </label>
+
+              {err ? <div className="bp-login-err">{err}</div> : null}
+
+              <button type="button" className="bp-google-btn" onClick={doGoogleSSO} disabled={step==="google"}>
+                <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+                  <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34 5.1 29.3 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21c11.6 0 21-9.4 21-21 0-1.4-.1-2.7-.4-4z"/>
+                  <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 18.9 13 24 13c3 0 5.8 1.1 7.9 3l5.7-5.7C34 5.1 29.3 3 24 3 16.3 3 9.7 7.6 6.3 14.7z"/>
+                  <path fill="#4CAF50" d="M24 45c5.2 0 9.9-2 13.4-5.2l-6.2-5.2c-2 1.5-4.5 2.4-7.2 2.4-5.2 0-9.7-3.3-11.3-8l-6.5 5C9.5 40.3 16.1 45 24 45z"/>
+                  <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4.1 5.5l6.2 5.2C40.9 36 45 30.6 45 24c0-1.4-.1-2.7-.4-3.5z"/>
+                </svg>
+                <span>{step === "google" ? "Authorizing with Google…" : "Continue with Google"}</span>
+              </button>
+
+              <div className="bp-login-or"><span>or</span></div>
+
+              <GlassButton type="submit" variant="primary" size="lg" style={{width:"100%"}}>
+                Sign in with password
+              </GlassButton>
+
+              <div className="bp-login-foot">
+                <button type="button" className="bp-link">Forgot password?</button>
+                <button type="button" className="bp-link" onClick={() => onAuth({ email: "admin@brightpath-mn.com", role: "admin" })}>Use admin demo ↗</button>
+              </div>
+            </form>
+          </FadeIn>
+        </GlassCard>
+      </FadeIn>
+
+      <FadeIn delay={520}>
+        <div className="bp-login-side">
+          <div className="bp-login-eyebrow" style={{color:"#FFD200"}}>Welcome to BrightPath Learn</div>
+          <h2 className="bp-login-side-h">The freedom to pursue joy starts with a well-prepared team.</h2>
+          <ul className="bp-login-side-list">
+            <li><span></span><span>{(window.BP_MODULES || []).length || 11} modules across foundations, apps, and advanced topics</span></li>
+            <li><span></span><span>Knowledge checks and certificates for every module</span></li>
+            <li><span></span><span>Sequential learning — unlock the next module as you go</span></li>
+          </ul>
+          <div className="bp-login-side-foot">© 2026 BrightPath · 9220 Bass Lake Rd, New Hope, MN 55428</div>
+        </div>
+      </FadeIn>
+    </div>
+  );
+}
+
+window.LoginScreen = LoginScreen;
+
+
+// ─────────────────────────────────────────────
+
+// Learner Dashboard — Module cards grid + progress + Continue CTA top
+function LearnerDashboard({ currentUser, progress, onOpenModule, onOpenCertificate, onOpenAllModules }) {
+  const modules = window.BP_MODULES;
+
+  const stats = useMemo(() => {
+    let completed = 0, inProgress = 0, certs = 0, totalScore = 0, scored = 0;
+    modules.forEach(m => {
+      const p = progress[m.id];
+      if (!p) return;
+      if (p.status === "completed") { completed++; certs++; }
+      else if (p.status === "in-progress") inProgress++;
+      if (typeof p.score === "number") { totalScore += p.score; scored++; }
+    });
+    return {
+      completed, inProgress, certs,
+      avg: scored ? Math.round(totalScore / scored) : null,
+      total: modules.length,
+    };
+  }, [progress, modules]);
+
+  // Continue: first in-progress module, else first not-started UNLOCKED module
+  const nextUp = useMemo(() => {
+    const inProg = modules.find(m => (progress[m.id]?.status === "in-progress"));
+    if (inProg) return inProg;
+    const notStartedUnlocked = modules.find(m => {
+      const p = progress[m.id];
+      const isNew = !p || p.status === "not-started";
+      return isNew && window.BP_isUnlocked(m.id, progress);
+    });
+    return notStartedUnlocked || modules[0];
+  }, [progress, modules]);
+
+  const nextPct = progress[nextUp.id]?.percent || 0;
+  const allDone = stats.completed === stats.total;
+
+  return (
+    <div className="bp-page">
+      <FadeIn delay={80}>
+        <div className="bp-welcome">
+          <div className="bp-welcome-eyebrow">Welcome back</div>
+          <h1 className="bp-h-display">Hello, {currentUser.name.split(" ")[0]}.</h1>
+          <p className="bp-welcome-sub">Continue your training — every module brings you closer to mastery.</p>
+        </div>
+      </FadeIn>
+
+      {/* Continue Course strip */}
+      <FadeIn delay={180}>
+        <GlassCard className="bp-continue" padding={28}>
+          <div className="bp-continue-l">
+            <Pill tone={allDone ? "success" : "accent"}>{allDone ? "ALL MODULES COMPLETE" : "CONTINUE WHERE YOU LEFT OFF"}</Pill>
+            <h2 className="bp-h-2" style={{marginTop:12}}>{allDone ? "You've completed every BrightPath module." : nextUp.title}</h2>
+            <div className="bp-continue-meta">
+              {allDone ? (
+                <>
+                  <span>{stats.certs} certificates earned</span>
+                  <span className="dot">·</span>
+                  <span>Average score {stats.avg}%</span>
+                </>
+              ) : (
+                <>
+                  <span>{nextUp.code}</span><span className="dot">·</span>
+                  <span>{nextUp.category}</span><span className="dot">·</span>
+                  <span>{nextUp.duration}</span>
+                </>
+              )}
+            </div>
+            {!allDone && (
+              <div className="bp-continue-pb">
+                <ProgressBar value={nextPct}/>
+                <span className="bp-continue-pct">{nextPct}% complete</span>
+              </div>
+            )}
+          </div>
+          <div className="bp-continue-r">
+            {allDone ? (
+              <GlassButton variant="primary" size="lg" onClick={() => onOpenCertificate(modules[modules.length - 1].id)}>
+                View Certificates →
+              </GlassButton>
+            ) : (
+              <GlassButton variant="primary" size="lg" onClick={() => onOpenModule(nextUp.id)}>
+                {nextPct > 0 ? "Resume Course" : "Start Course"} →
+              </GlassButton>
+            )}
+            <GlassButton variant="ghost" size="md" onClick={onOpenAllModules}>Browse all modules</GlassButton>
+          </div>
+        </GlassCard>
+      </FadeIn>
+
+      {/* Stat row */}
+      <FadeIn delay={260}>
+        <div className="bp-stats">
+          <Stat label="Modules complete" value={`${stats.completed}/${stats.total}`}/>
+          <Stat label="In progress"      value={stats.inProgress}/>
+          <Stat label="Certificates"     value={stats.certs}/>
+          <Stat label="Average score"    value={stats.avg !== null ? `${stats.avg}%` : "—"}/>
+        </div>
+      </FadeIn>
+
+      {/* Module grid */}
+      <FadeIn delay={340}>
+        <div className="bp-section-head">
+          <h2 className="bp-h-2">Your modules</h2>
+          <span className="bp-section-meta">{modules.length} modules</span>
+        </div>
+      </FadeIn>
+
+      <div className="bp-mod-grid">
+        {modules.map((m, i) => {
+          const p = progress[m.id] || {};
+          const completed = p.status === "completed";
+          const unlocked = window.BP_isUnlocked(m.id, progress);
+          const prevModule = i > 0 ? modules[i - 1] : null;
+          const lockedReason = prevModule
+            ? `Unlocks after completing Module ${String(i).padStart(2, "0")} — ${prevModule.title}.`
+            : "";
+          return (
+            <FadeIn key={m.id} delay={400 + i * 50}>
+              <ModuleCard
+                module={m}
+                progress={p}
+                locked={!unlocked}
+                lockedReason={lockedReason}
+                onOpen={() => onOpenModule(m.id)}
+                onCert={completed ? () => onOpenCertificate(m.id) : null}
+              />
+            </FadeIn>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function Stat({ label, value }) {
+  return (
+    <GlassCard className="bp-stat" padding={20}>
+      <div className="bp-stat-v">{value}</div>
+      <div className="bp-stat-l">{label}</div>
+    </GlassCard>
+  );
+}
+
+function ModuleCard({ module, progress, onOpen, onCert, locked, lockedReason }) {
+  const pct = progress.percent || 0;
+  const completed = progress.status === "completed";
+  const inProg    = progress.status === "in-progress";
+  const tone      = locked ? "neutral" : completed ? "success" : inProg ? "accent" : "neutral";
+  const statusLabel = locked ? "Locked" : completed ? "Completed" : inProg ? "In Progress" : "Not Started";
+
+  return (
+    <GlassCard className={"bp-mod-card " + (locked ? "is-locked" : "")} padding={0}>
+      <div className="bp-mod-thumb">
+        <div className="bp-mod-thumb-code">{module.code}</div>
+        <div className="bp-mod-thumb-glyph" aria-hidden="true" dangerouslySetInnerHTML={{__html: window.BP_MOD_ICON(module.category)}}/>
+        <Pill tone={tone} style={{position:"absolute", top:14, right:14}}>
+          {locked && (
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{marginRight:4}}>
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          )}
+          {statusLabel}
+        </Pill>
+        {locked && <div className="bp-mod-lock-overlay" aria-hidden="true"/>}
+      </div>
+      <div className="bp-mod-body">
+        <div className="bp-mod-cat">{module.category} · {module.duration}</div>
+        <h3 className="bp-mod-title">{module.title}</h3>
+        <p className="bp-mod-desc">{locked ? lockedReason : module.description}</p>
+
+        <div className="bp-mod-progress">
+          <ProgressBar value={pct}/>
+          <span className="bp-mod-pct">{pct}%{progress.score ? ` · Score ${progress.score}%` : ""}</span>
+        </div>
+
+        <div className="bp-mod-cta">
+          {locked ? (
+            <GlassButton variant="ghost" size="md" disabled>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{marginRight:6, verticalAlign:"-2px"}}>
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              Locked
+            </GlassButton>
+          ) : (
+            <GlassButton variant={completed ? "ghost" : "primary"} size="md" onClick={onOpen}>
+              {completed ? "Review" : inProg ? "Continue" : "Start"}
+            </GlassButton>
+          )}
+          {onCert && !locked && (
+            <GlassButton variant="ghost" size="md" onClick={onCert}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{marginRight:6, verticalAlign:"-2px"}}>
+                <circle cx="12" cy="8" r="6"/><path d="M9 14l-2 7 5-3 5 3-2-7"/>
+              </svg>
+              Certificate
+            </GlassButton>
+          )}
+        </div>
+      </div>
+    </GlassCard>
+  );
+}
+
+window.LearnerDashboard = LearnerDashboard;
+
+
+// ─────────────────────────────────────────────
+
+// Module Deck Viewer — slide presentation with prev/next nav
+function ModuleDeck({ moduleId, progress, onProgressUpdate, onLaunchQuiz, onExit }) {
+  const module = window.BP_MODULES.find(m => m.id === moduleId);
+  const slides = module.slides;
+  const [idx, setIdx] = useState(0);
+  const last = slides.length - 1;
+
+  // Mark slide viewed, update progress percent (without quiz factored)
+  useEffect(() => {
+    const pct = Math.round(((idx + 1) / slides.length) * 100);
+    // Don't downgrade — only push higher
+    const existing = progress.percent || 0;
+    if (pct > existing && progress.status !== "completed") {
+      onProgressUpdate({ percent: pct, status: pct === 100 ? "in-progress" : "in-progress" });
+    }
+  }, [idx]);
+
+  // Keyboard nav
+  useEffect(() => {
+    function k(e) {
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+      if (e.key === "ArrowRight") setIdx(i => Math.min(last, i + 1));
+      else if (e.key === "ArrowLeft") setIdx(i => Math.max(0, i - 1));
+      else if (e.key === "Escape") onExit();
+    }
+    window.addEventListener("keydown", k);
+    return () => window.removeEventListener("keydown", k);
+  }, [last]);
+
+  const slide = slides[idx];
+  const onLast = idx === last;
+
+  return (
+    <div className="bp-deck-wrap">
+      <FadeIn delay={60}>
+        <div className="bp-deck-topbar">
+          <button className="bp-back" onClick={onExit}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            <span>Back to dashboard</span>
+          </button>
+          <div className="bp-deck-titlebar">
+            <Pill tone="accent">{module.code}</Pill>
+            <span className="bp-deck-title-txt">{module.title}</span>
+          </div>
+          <div className="bp-deck-counter">{idx + 1} / {slides.length}</div>
+        </div>
+      </FadeIn>
+
+      {/* Slide stage */}
+      <div className="bp-deck-stage-wrap">
+        <FadeIn key={idx} delay={40} intensity="medium" y={16}>
+          <GlassCard className="bp-deck-stage" padding={0}>
+            <Slide slide={slide} module={module} idx={idx} total={slides.length}/>
+          </GlassCard>
+        </FadeIn>
+      </div>
+
+      {/* Bottom nav */}
+      <FadeIn delay={120}>
+        <div className="bp-deck-nav">
+          <GlassButton variant="ghost" size="lg"
+                       onClick={() => setIdx(i => Math.max(0, i - 1))}
+                       disabled={idx === 0}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight:8, verticalAlign:"-2px"}}>
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            Previous
+          </GlassButton>
+
+          <div className="bp-deck-dots">
+            {slides.map((_, i) => (
+              <button
+                key={i}
+                className={"bp-deck-dot " + (i === idx ? "is-active" : (i < idx ? "is-done" : ""))}
+                onClick={() => setIdx(i)}
+                aria-label={`Slide ${i + 1}`}
+              />
+            ))}
+          </div>
+
+          {onLast ? (
+            <GlassButton variant="primary" size="lg" onClick={onLaunchQuiz}>
+              Start Knowledge Check
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{marginLeft:8, verticalAlign:"-2px"}}>
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </GlassButton>
+          ) : (
+            <GlassButton variant="primary" size="lg" onClick={() => setIdx(i => Math.min(last, i + 1))}>
+              Next
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{marginLeft:8, verticalAlign:"-2px"}}>
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </GlassButton>
+          )}
+        </div>
+      </FadeIn>
+    </div>
+  );
+}
+
+function Slide({ slide, module, idx, total }) {
+  const t = slide.type;
+  // Look up images for this slide
+  const imgs = (window.BP_SLIDE_IMAGES?.[module.id]?.[idx]) || [];
+
+  // Wrapper that optionally adds an image panel on the right
+  function WithImages({ children, full = false }) {
+    if (!imgs.length || full) return <>{children}</>;
+    const isDouble = imgs.length >= 2;
+    if (isDouble) {
+      // Two images: text on top (compact), images side by side below (full width)
+      return (
+        <div className="bp-slide-double-layout">
+          <div className="bp-slide-double-text">{children}</div>
+          <div className="bp-slide-double-imgs">
+            {imgs.map((src, i) => (
+              <div key={i} className="bp-slide-img-frame bp-slide-img-frame-double">
+                <img src={src} alt="" loading="lazy"/>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="bp-slide-with-img">
+        <div className="bp-slide-text-col">{children}</div>
+        <div className="bp-slide-img-col">
+          {imgs.map((src, i) => (
+            <div key={i} className="bp-slide-img-frame">
+              <img src={src} alt="" loading="lazy"/>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (t === "cover") {
+    return (
+      <div className="bp-slide bp-slide-cover">
+        <FadeIn delay={120}>
+          <div className="bp-slide-eyebrow">{slide.eyebrow} · {module.code}</div>
+          <h1 className="bp-slide-cover-title">{slide.title}</h1>
+          <p className="bp-slide-cover-sub"><em>{slide.subtitle}</em></p>
+          <p className="bp-slide-body" style={{maxWidth: 720, marginTop: 28}}>{slide.body}</p>
+        </FadeIn>
+        <FadeIn delay={420}>
+          <div className="bp-slide-cover-meta">
+            <span>{module.duration}</span><span className="dot">·</span>
+            <span>{module.category}</span><span className="dot">·</span>
+            <span>{module.quiz.length} question check</span>
+          </div>
+        </FadeIn>
+      </div>
+    );
+  }
+
+  if (t === "content") {
+    return (
+      <div className="bp-slide bp-slide-content">
+        <WithImages>
+          <FadeIn delay={100}><h2 className="bp-slide-h">{slide.title}</h2></FadeIn>
+          <FadeIn delay={220}><div className="bp-slide-body" style={{whiteSpace:"pre-line"}}>{slide.body}</div></FadeIn>
+        </WithImages>
+      </div>
+    );
+  }
+
+  if (t === "pillars") {
+    return (
+      <div className="bp-slide bp-slide-pillars">
+        <WithImages>
+          <FadeIn delay={100}><h2 className="bp-slide-h">{slide.title}</h2></FadeIn>
+          <div className="bp-pillar-grid">
+            {slide.items.map((it, i) => (
+              <FadeIn key={i} delay={220 + i * 90}>
+                <div className="bp-pillar">
+                  <div className="bp-pillar-num">{String(i+1).padStart(2,"0")}</div>
+                  <div className="bp-pillar-k">{it.k}</div>
+                  <div className="bp-pillar-v">{it.v}</div>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+        </WithImages>
+      </div>
+    );
+  }
+
+  if (t === "list") {
+    return (
+      <div className="bp-slide bp-slide-list">
+        <WithImages>
+          <FadeIn delay={100}><h2 className="bp-slide-h">{slide.title}</h2></FadeIn>
+          <ul className="bp-list-big">
+            {slide.items.map((it, i) => (
+              <FadeIn as="li" key={i} delay={220 + i * 80}>
+                <span className="bp-list-bullet">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0a2540" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </span>
+                <span>{it}</span>
+              </FadeIn>
+            ))}
+          </ul>
+        </WithImages>
+      </div>
+    );
+  }
+
+  if (t === "steps") {
+    return (
+      <div className="bp-slide bp-slide-steps">
+        <WithImages>
+          <FadeIn delay={100}><h2 className="bp-slide-h">{slide.title}</h2></FadeIn>
+          <div className="bp-steps-grid">
+            {slide.items.map((it, i) => (
+              <FadeIn key={i} delay={220 + i * 110}>
+                <div className="bp-step">
+                  <div className="bp-step-n">{String(i+1).padStart(2,"0")}</div>
+                  <div className="bp-step-body">
+                    <div className="bp-step-h">{it.h}</div>
+                    <div className="bp-step-b">{it.b}</div>
+                  </div>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+        </WithImages>
+      </div>
+    );
+  }
+
+  if (t === "twocol") {
+    return (
+      <div className="bp-slide bp-slide-twocol">
+        <WithImages>
+          <FadeIn delay={100}><h2 className="bp-slide-h">{slide.title}</h2></FadeIn>
+          <div className="bp-twocol-grid">
+            {[slide.left, slide.right].map((col, ci) => (
+              <FadeIn key={ci} delay={220 + ci * 120}>
+                <div className={"bp-twocol-col " + (ci===0 ? "is-l" : "is-r")}>
+                  <div className="bp-twocol-h">{col.h}</div>
+                  <ul className="bp-twocol-list">
+                    {col.items.map((it,i) => <li key={i}>{it}</li>)}
+                  </ul>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+        </WithImages>
+      </div>
+    );
+  }
+
+  if (t === "quote") {
+    return (
+      <div className="bp-slide bp-slide-quote">
+        <FadeIn delay={120}>
+          <div className="bp-quote-mark">"</div>
+          <blockquote className="bp-quote">{slide.quote}</blockquote>
+          <div className="bp-quote-attrib">— {slide.attrib}</div>
+        </FadeIn>
+      </div>
+    );
+  }
+
+  if (t === "outro") {
+    return (
+      <div className="bp-slide bp-slide-outro">
+        <FadeIn delay={100}>
+          <Pill tone="accent" style={{marginBottom:18}}>FINAL SLIDE</Pill>
+          <h2 className="bp-slide-h">{slide.title}</h2>
+          <p className="bp-slide-body" style={{maxWidth: 700}}>{slide.body}</p>
+        </FadeIn>
+      </div>
+    );
+  }
+
+  if (t === "twocol") {
+    return (
+      <div className="bp-slide bp-slide-twocol">
+        <FadeIn delay={100}>
+          <h2 className="bp-slide-h">{slide.title}</h2>
+        </FadeIn>
+        <div className="bp-twocol-grid">
+          {[slide.left, slide.right].map((col, ci) => (
+            <FadeIn key={ci} delay={220 + ci * 120}>
+              <div className={"bp-twocol-col " + (ci === 0 ? "is-l" : "is-r")}>
+                <div className="bp-twocol-h">{col.h}</div>
+                <ul className="bp-twocol-list">
+                  {col.items.map((it, i) => <li key={i}>{it}</li>)}
+                </ul>
+              </div>
+            </FadeIn>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (t === "steps") {
+    return (
+      <div className="bp-slide bp-slide-steps">
+        <FadeIn delay={100}>
+          <h2 className="bp-slide-h">{slide.title}</h2>
+        </FadeIn>
+        <div className="bp-steps-grid">
+          {slide.items.map((it, i) => (
+            <FadeIn key={i} delay={220 + i * 110}>
+              <div className="bp-step">
+                <div className="bp-step-n">{String(i + 1).padStart(2, "0")}</div>
+                <div className="bp-step-body">
+                  <div className="bp-step-h">{it.h}</div>
+                  <div className="bp-step-b">{it.b}</div>
+                </div>
+              </div>
+            </FadeIn>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (t === "callout") {
+    return (
+      <div className="bp-slide bp-slide-callout">
+        <FadeIn delay={100}>
+          <div className="bp-callout">
+            <div className="bp-callout-bar"/>
+            <div className="bp-callout-body">
+              <Pill tone="accent" style={{marginBottom:14}}>TIP</Pill>
+              <h2 className="bp-slide-h" style={{fontSize:"clamp(28px,3vw,40px)"}}>{slide.title}</h2>
+              <p className="bp-slide-body" style={{whiteSpace:"pre-line"}}>{slide.body}</p>
+            </div>
+          </div>
+        </FadeIn>
+      </div>
+    );
+  }
+
+  return <div className="bp-slide"><h2 className="bp-slide-h">{slide.title}</h2></div>;
+}
+
+window.ModuleDeck = ModuleDeck;
+
+
+// ─────────────────────────────────────────────
+
+// Knowledge Check Quiz — MCQ + scenario, 80% pass, certificate prompt
+function QuizScreen({ moduleId, onPass, onRetake, onExit, onViewCertificate, onNextModule, passingScore = 80 }) {
+  const module = window.BP_MODULES.find(m => m.id === moduleId);
+  const questions = module.quiz;
+
+  const [step, setStep]       = useState("intro"); // intro | running | results
+  const [idx, setIdx]         = useState(0);
+  const [answers, setAnswers] = useState({});
+  const [submitted, setSubmitted] = useState(false);
+  const [showCongrats, setShowCongrats] = useState(false);
+
+  const score = useMemo(() => {
+    let n = 0;
+    questions.forEach((q, i) => { if (answers[i] === q.answer) n++; });
+    return { correct: n, total: questions.length, pct: Math.round((n / questions.length) * 100) };
+  }, [answers, questions]);
+
+  const allAnswered = Object.keys(answers).length === questions.length;
+  const passed = score.pct >= passingScore;
+
+  function start() {
+    setStep("running"); setIdx(0); setAnswers({}); setSubmitted(false);
+  }
+  function submit() {
+    setSubmitted(true); setStep("results");
+    if (score.pct >= passingScore) {
+      onPass({ score: score.pct });
+      // Show celebration modal after a tiny beat
+      setTimeout(() => setShowCongrats(true), 350);
+    }
+  }
+  function retake() {
+    setStep("running"); setIdx(0); setAnswers({}); setSubmitted(false);
+    onRetake?.();
+  }
+
+  const isLastModule = window.BP_MODULES[window.BP_MODULES.length - 1].id === moduleId;
+
+  // ── INTRO ───────────────────────────────────────────────────────────────
+  if (step === "intro") {
+    return (
+      <div className="bp-page bp-page-narrow">
+        <FadeIn delay={80}>
+          <button className="bp-back" onClick={onExit}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            <span>Back to module</span>
+          </button>
+        </FadeIn>
+
+        <FadeIn delay={160}>
+          <GlassCard className="bp-quiz-intro" padding={48}>
+            <Pill tone="accent">KNOWLEDGE CHECK</Pill>
+            <h1 className="bp-h-display" style={{marginTop:16}}>{module.title}</h1>
+            <p className="bp-quiz-sub">{questions.length} questions · No time limit · Passing score <b>{passingScore}%</b></p>
+
+            <div className="bp-quiz-rules">
+              <div className="bp-quiz-rule">
+                <div className="bp-quiz-rule-n">01</div>
+                <div><b>Multiple choice &amp; scenarios.</b> Choose the single best answer.</div>
+              </div>
+              <div className="bp-quiz-rule">
+                <div className="bp-quiz-rule-n">02</div>
+                <div><b>Review before submitting.</b> You can change any answer until you submit.</div>
+              </div>
+              <div className="bp-quiz-rule">
+                <div className="bp-quiz-rule-n">03</div>
+                <div><b>Earn your certificate.</b> Score {passingScore}% or higher to unlock the BrightPath certificate of completion.</div>
+              </div>
+            </div>
+
+            <GlassButton variant="primary" size="lg" onClick={start} style={{marginTop:28}}>Begin Check →</GlassButton>
+          </GlassCard>
+        </FadeIn>
+      </div>
+    );
+  }
+
+  // ── RUNNING ─────────────────────────────────────────────────────────────
+  if (step === "running") {
+    const q = questions[idx];
+    const sel = answers[idx];
+    return (
+      <div className="bp-page bp-page-narrow">
+        <FadeIn delay={40}>
+          <div className="bp-quiz-topbar">
+            <span className="bp-quiz-counter">Question {idx + 1} <span style={{opacity:.5}}>of {questions.length}</span></span>
+            <div className="bp-quiz-bar"><div style={{width: `${((idx + (sel !== undefined ? 1 : 0)) / questions.length) * 100}%`}}/></div>
+            <button className="bp-link" onClick={onExit}>Save &amp; exit</button>
+          </div>
+        </FadeIn>
+
+        <FadeIn key={idx} delay={80}>
+          <GlassCard className="bp-quiz-card" padding={40}>
+            <div className="bp-quiz-q-eyebrow">{q.q.startsWith("Scenario") ? "SCENARIO" : "QUESTION"}</div>
+            <h2 className="bp-quiz-q">{q.q}</h2>
+
+            <div className="bp-quiz-choices">
+              {q.choices.map((c, ci) => {
+                const isSel = sel === ci;
+                return (
+                  <button key={ci}
+                          className={"bp-quiz-choice " + (isSel ? "is-selected" : "")}
+                          onClick={() => setAnswers(a => ({ ...a, [idx]: ci }))}>
+                    <span className="bp-choice-letter">{String.fromCharCode(65 + ci)}</span>
+                    <span className="bp-choice-text">{c}</span>
+                    {isSel && (
+                      <svg className="bp-choice-check" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </GlassCard>
+        </FadeIn>
+
+        <FadeIn delay={140}>
+          <div className="bp-quiz-nav">
+            <GlassButton variant="ghost" size="lg" disabled={idx === 0} onClick={() => setIdx(i => Math.max(0, i - 1))}>
+              ← Previous
+            </GlassButton>
+            {idx < questions.length - 1 ? (
+              <GlassButton variant="primary" size="lg" disabled={sel === undefined} onClick={() => setIdx(i => i + 1)}>
+                Next →
+              </GlassButton>
+            ) : (
+              <GlassButton variant="primary" size="lg" disabled={!allAnswered} onClick={submit}>
+                Submit Answers
+              </GlassButton>
+            )}
+          </div>
+        </FadeIn>
+      </div>
+    );
+  }
+
+  // ── RESULTS ─────────────────────────────────────────────────────────────
+  return (
+    <div className="bp-page bp-page-narrow">
+      <FadeIn delay={80}>        <GlassCard className={"bp-quiz-results " + (passed ? "is-pass" : "is-fail")} padding={48}>
+          <div className={"bp-result-badge " + (passed ? "is-pass" : "is-fail")}>
+            {passed ? (
+              <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            ) : (
+              <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            )}
+          </div>
+          <Pill tone={passed ? "success" : "danger"} style={{margin: "0 auto 14px", display:"inline-block"}}>
+            {passed ? "PASSED" : "NOT YET — TRY AGAIN"}
+          </Pill>
+          <h1 className="bp-h-display" style={{textAlign:"center", marginBottom:8}}>
+            {passed ? "Congratulations!" : "Close — keep going."}
+          </h1>
+          <div className="bp-result-score">
+            <span className="bp-result-score-n">{score.pct}<small>%</small></span>
+            <span className="bp-result-score-d">{score.correct} of {score.total} correct · Passing {passingScore}%</span>
+          </div>
+
+          {passed ? (
+            <div className="bp-result-cta">
+              <p className="bp-result-msg">You've completed <b>{module.title}</b>. Your certificate is ready.</p>
+              <div className="bp-result-btn-row">
+                <GlassButton variant="primary" size="lg" onClick={onViewCertificate}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{marginRight:8, verticalAlign:"-2px"}}>
+                    <circle cx="12" cy="8" r="6"/><path d="M9 14l-2 7 5-3 5 3-2-7"/>
+                  </svg>
+                  View &amp; Download Certificate
+                </GlassButton>
+                <GlassButton variant="ghost" size="lg" onClick={onExit}>Return to dashboard</GlassButton>
+              </div>
+            </div>
+          ) : (
+            <div className="bp-result-cta">
+              <p className="bp-result-msg">Review the module and try the check again — you've got this.</p>
+              <div className="bp-result-btn-row">
+                <GlassButton variant="primary" size="lg" onClick={retake}>Retake Assessment</GlassButton>
+                <GlassButton variant="ghost" size="lg" onClick={onExit}>Review Module</GlassButton>
+              </div>
+            </div>
+          )}
+
+          {/* Review answers */}
+          <div className="bp-result-review">
+            <h3 className="bp-h-3" style={{marginBottom:14}}>Your answers</h3>
+            {questions.map((q, i) => {
+              const correct = answers[i] === q.answer;
+              return (
+                <div key={i} className={"bp-review-item " + (correct ? "is-ok" : "is-x")}>
+                  <div className="bp-review-num">{i + 1}</div>
+                  <div className="bp-review-body">
+                    <div className="bp-review-q">{q.q}</div>
+                    <div className="bp-review-a">
+                      <span className={correct ? "ok" : "x"}>Your answer: {q.choices[answers[i]]}</span>
+                      {!correct && (
+                        <span className="ok">Correct: {q.choices[q.answer]}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="bp-review-mark">
+                    {correct ? "✓" : "✕"}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </GlassCard>
+      </FadeIn>
+
+      {showCongrats && passed && (
+        <CongratsModal
+          module={module}
+          score={score.pct}
+          isLastModule={isLastModule}
+          onDownloadCert={() => { setShowCongrats(false); onViewCertificate(); }}
+          onNextModule={() => { setShowCongrats(false); onNextModule && onNextModule(); }}
+          onBackToDashboard={() => { setShowCongrats(false); onExit(); }}
+          onClose={() => setShowCongrats(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+window.QuizScreen = QuizScreen;
+
+
+// ─────────────────────────────────────────────
+
+// Certificate Screen — Cinematic mountain photo background with overlaid text
+function CertificateScreen({ moduleId, currentUser, progress, onExit, onBackToDashboard }) {
+  const module = window.BP_MODULES.find(m => m.id === moduleId);
+  const p = progress[moduleId] || {};
+  const certRef = useRef(null);
+  const [downloading, setDownloading] = useState(false);
+
+  // Generate a stable certificate ID from inputs
+  const certId = `BP-${module.code}-${(currentUser.email || "user").split("@")[0].toUpperCase().slice(0,6)}-${(p.completedOn || "2026-05-27").replaceAll("-","")}`;
+  const issueDate = p.completedOn || new Date().toISOString().slice(0,10);
+  const formattedDate = new Date(issueDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+
+  function printCert() {
+    // Open new window with just the cert HTML for clean PDF printing
+    window.print();
+  }
+
+  function downloadPNG() {
+    setDownloading(true);
+    const el = certRef.current;
+    if (!el) { setDownloading(false); return; }
+    // Use HTML-to-canvas via DOM API — fallback to capturing via window.print().
+    // Since we can't bundle html2canvas, give user a print-to-PDF flow.
+    setTimeout(() => { window.print(); setDownloading(false); }, 150);
+  }
+
+  return (
+    <div className="bp-page bp-cert-page">
+      <FadeIn delay={60} intensity="none">
+        <div className="bp-cert-topbar bp-no-print">
+          <button className="bp-back" onClick={onExit}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            <span>Back</span>
+          </button>
+          <div className="bp-cert-actions">
+            <GlassButton variant="ghost" size="md" onClick={onBackToDashboard}>Dashboard</GlassButton>
+            <GlassButton variant="primary" size="md" onClick={downloadPNG} disabled={downloading}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{marginRight:8, verticalAlign:"-2px"}}>
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Download Certificate
+            </GlassButton>
+          </div>
+        </div>
+      </FadeIn>
+
+      <FadeIn delay={180}>
+        <div className="bp-cert-frame">
+          <div className="bp-cert" ref={certRef}>
+            {/* Photo background */}
+            <div className="bp-cert-photo" />
+            <div className="bp-cert-tint" />
+
+            {/* Decorative border */}
+            <div className="bp-cert-border">
+              <div className="bp-cert-corner tl"/>
+              <div className="bp-cert-corner tr"/>
+              <div className="bp-cert-corner bl"/>
+              <div className="bp-cert-corner br"/>
+            </div>
+
+            {/* Content */}
+            <div className="bp-cert-content">
+              <FadeIn delay={320} intensity="cinematic">
+                <div className="bp-cert-logo">
+                  <BPLogo size={56} wordmark={false}/>
+                  <span className="bp-cert-logo-txt">BrightPath</span>
+                </div>
+              </FadeIn>
+
+              <FadeIn delay={460} intensity="cinematic">
+                <div className="bp-cert-eyebrow">Certificate of Completion</div>
+              </FadeIn>
+
+              <FadeIn delay={620} intensity="cinematic">
+                <div className="bp-cert-presented">This is to certify that</div>
+              </FadeIn>
+
+              <FadeIn delay={780} intensity="cinematic">
+                <h1 className="bp-cert-name">{currentUser.name}</h1>
+                <div className="bp-cert-rule"/>
+              </FadeIn>
+
+              <FadeIn delay={920} intensity="cinematic">
+                <p className="bp-cert-body">has successfully completed the BrightPath learning module</p>
+              </FadeIn>
+
+              <FadeIn delay={1080} intensity="cinematic">
+                <h2 className="bp-cert-course">{module.title}</h2>
+                <div className="bp-cert-course-sub">{module.subtitle}</div>
+              </FadeIn>
+
+              <FadeIn delay={1220} intensity="cinematic">
+                <div className="bp-cert-meta">
+                  <div className="bp-cert-meta-col">
+                    <div className="bp-cert-meta-l">Score</div>
+                    <div className="bp-cert-meta-v">{p.score || 100}%</div>
+                  </div>
+                  <div className="bp-cert-meta-col">
+                    <div className="bp-cert-meta-l">Issued</div>
+                    <div className="bp-cert-meta-v">{formattedDate}</div>
+                  </div>
+                  <div className="bp-cert-meta-col">
+                    <div className="bp-cert-meta-l">Certificate ID</div>
+                    <div className="bp-cert-meta-v mono">{certId}</div>
+                  </div>
+                </div>
+              </FadeIn>
+
+              <FadeIn delay={1360} intensity="cinematic">
+                <div className="bp-cert-signatures">
+                  <div className="bp-cert-sig">
+                    <div className="bp-cert-sig-line">
+                      <svg width="160" height="36" viewBox="0 0 180 40">
+                        <path d="M8 28 C 30 8, 50 36, 70 18 S 110 26, 130 14 S 160 24, 172 16" fill="none" stroke="#FFD200" strokeWidth="1.8" strokeLinecap="round"/>
+                      </svg>
+                    </div>
+                    <div className="bp-cert-sig-name">Brandon Spears</div>
+                    <div className="bp-cert-sig-title">Executive Director</div>
+                  </div>
+                  <div className="bp-cert-seal">
+                    <img src="assets/brightpath-logo.png" alt="BrightPath" width="72" height="72"
+                      style={{width:72, height:72, objectFit:"contain", display:"block", borderRadius:9}}/>
+                  </div>
+                  <div className="bp-cert-sig">
+                    <div className="bp-cert-sig-line">
+                      <svg width="160" height="36" viewBox="0 0 180 40">
+                        <path d="M10 24 C 24 14, 44 30, 64 20 S 102 28, 124 18 S 158 22, 170 22" fill="none" stroke="#FFD200" strokeWidth="1.8" strokeLinecap="round"/>
+                      </svg>
+                    </div>
+                    <div className="bp-cert-sig-name">Nicole Buechler</div>
+                    <div className="bp-cert-sig-title">Director of Quality Assurance and Training</div>
+                  </div>
+                </div>
+              </FadeIn>
+
+              <FadeIn delay={1500} intensity="cinematic">
+                <div className="bp-cert-footer">
+                  <em>The freedom to pursue joy.</em>
+                  <span>·</span>
+                  <span>9220 Bass Lake Rd, New Hope, MN 55428</span>
+                </div>
+              </FadeIn>
+            </div>
+          </div>
+        </div>
+      </FadeIn>
+
+      <FadeIn delay={400} intensity="subtle">
+        <p className="bp-cert-tip bp-no-print">Tip: Use <b>Download Certificate</b> to save as PDF (the print dialog opens — choose "Save as PDF").</p>
+      </FadeIn>
+    </div>
+  );
+}
+
+window.CertificateScreen = CertificateScreen;
+
+
+// ─────────────────────────────────────────────
+
+// Admin — Modules, Learners, Progress, Certificates
+function AdminScreen({ tab, modules, setModules, learners, setLearners, progressByLearner, setProgressByLearner }) {
+  if (tab === "modules")       return <AdminModules modules={modules} setModules={setModules}/>;
+  if (tab === "learners")      return <AdminLearners learners={learners} setLearners={setLearners} progressByLearner={progressByLearner} setProgressByLearner={setProgressByLearner} modules={modules}/>;
+  if (tab === "progress")      return <AdminProgress learners={learners} modules={modules} progressByLearner={progressByLearner}/>;
+  if (tab === "certificates")  return <AdminCertificates learners={learners} modules={modules} progressByLearner={progressByLearner}/>;
+  return null;
+}
+
+// ─── Modules tab ────────────────────────────────────────────────────────────
+function AdminModules({ modules, setModules }) {
+  const [query, setQuery]   = useState("");
+  const [editing, setEditing] = useState(null); // module being edited / created
+  const [draft, setDraft]   = useState(null);
+
+  const filtered = modules.filter(m => (m.title + m.code + m.category).toLowerCase().includes(query.toLowerCase()));
+
+  function startCreate() {
+    setDraft({
+      id: "m" + (modules.length + 1).toString().padStart(2, "0"),
+      code: "BP-XXX",
+      title: "New Module",
+      subtitle: "",
+      duration: "30 min",
+      category: "Onboarding",
+      description: "",
+      slides: [{ type: "cover", eyebrow: "Module", title: "New Module", subtitle: "", body: "" }],
+      quiz: [],
+    });
+    setEditing("new");
+  }
+  function startEdit(m) { setDraft({ ...m }); setEditing(m.id); }
+  function save() {
+    if (editing === "new") setModules([...modules, draft]);
+    else setModules(modules.map(m => m.id === editing ? draft : m));
+    setEditing(null); setDraft(null);
+  }
+  function del(id) {
+    if (!confirm("Delete this module? This cannot be undone.")) return;
+    setModules(modules.filter(m => m.id !== id));
+  }
+
+  return (
+    <div className="bp-page">
+      <FadeIn delay={60}>
+        <div className="bp-admin-head">
+          <div>
+            <div className="bp-welcome-eyebrow">Curriculum</div>
+            <h1 className="bp-h-display">Modules</h1>
+            <p className="bp-admin-sub">{modules.length} modules · Manage curriculum, slides, and knowledge checks.</p>
+          </div>
+          <div className="bp-admin-head-actions">
+            <SearchInput value={query} onChange={setQuery} placeholder="Search modules…"/>
+            <GlassButton variant="primary" size="md" onClick={startCreate}>+ New Module</GlassButton>
+          </div>
+        </div>
+      </FadeIn>
+
+      <FadeIn delay={140}>
+        <GlassCard padding={0} className="bp-table-card">
+          <table className="bp-table">
+            <thead>
+              <tr>
+                <th style={{width: 90}}>Code</th>
+                <th>Module</th>
+                <th>Category</th>
+                <th style={{width: 100}}>Duration</th>
+                <th style={{width: 100}}>Slides</th>
+                <th style={{width: 90}}>Quiz</th>
+                <th style={{width: 180}}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((m, i) => (
+                <tr key={m.id}>
+                  <td><span className="bp-mono">{m.code}</span></td>
+                  <td>
+                    <div className="bp-tbl-title">{m.title}</div>
+                    <div className="bp-tbl-sub">{m.subtitle}</div>
+                  </td>
+                  <td><Pill tone={catTone(m.category)}>{m.category}</Pill></td>
+                  <td>{m.duration}</td>
+                  <td>{m.slides.length}</td>
+                  <td>{m.quiz.length} Qs</td>
+                  <td>
+                    <div className="bp-row-actions">
+                      <button className="bp-link" onClick={() => startEdit(m)}>Edit</button>
+                      <button className="bp-link bp-link-danger" onClick={() => del(m.id)}>Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </GlassCard>
+      </FadeIn>
+
+      {editing && draft && (
+        <Modal onClose={() => { setEditing(null); setDraft(null); }} title={editing === "new" ? "Create module" : "Edit module"}>
+          <ModuleEditor draft={draft} setDraft={setDraft}/>
+          <div className="bp-modal-foot">
+            <GlassButton variant="ghost" size="md" onClick={() => { setEditing(null); setDraft(null); }}>Cancel</GlassButton>
+            <GlassButton variant="primary" size="md" onClick={save}>Save module</GlassButton>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+function ModuleEditor({ draft, setDraft }) {
+  const update = (k, v) => setDraft({ ...draft, [k]: v });
+  const [pptName, setPptName] = useState(null);
+  const [pptStatus, setPptStatus] = useState(null);
+  const [promptText, setPromptText] = useState("");
+  const [promptStatus, setPromptStatus] = useState(null);
+
+  function handlePptUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPptName(file.name);
+    setPptStatus("processing");
+    // Simulate processing
+    setTimeout(() => {
+      setPptStatus("done");
+      update("subtitle", "Updated from " + file.name);
+    }, 1800);
+  }
+
+  function applyPrompt() {
+    if (!promptText.trim()) return;
+    setPromptStatus("processing");
+    setTimeout(() => {
+      setPromptStatus("done");
+      // Apply prompt result to description
+      update("description", promptText.trim() + " (AI-generated summary pending review)");
+    }, 1400);
+  }
+
+  return (
+    <div className="bp-editor">
+      <div className="bp-editor-row">
+        <label className="bp-field">
+          <span className="bp-field-lbl">Module code</span>
+          <input className="bp-input" value={draft.code} onChange={e => update("code", e.target.value)}/>
+        </label>
+        <label className="bp-field">
+          <span className="bp-field-lbl">Category</span>
+          <select className="bp-input" value={draft.category} onChange={e => update("category", e.target.value)}>
+            <option>Onboarding</option><option>Getting Started</option><option>Apps & Extensions</option>
+            <option>Advanced</option><option>Care Practice</option><option>Compliance</option>
+          </select>
+        </label>
+        <label className="bp-field">
+          <span className="bp-field-lbl">Duration</span>
+          <input className="bp-input" value={draft.duration} onChange={e => update("duration", e.target.value)}/>
+        </label>
+      </div>
+      <label className="bp-field">
+        <span className="bp-field-lbl">Title</span>
+        <input className="bp-input" value={draft.title} onChange={e => update("title", e.target.value)}/>
+      </label>
+      <label className="bp-field">
+        <span className="bp-field-lbl">Subtitle</span>
+        <input className="bp-input" value={draft.subtitle} onChange={e => update("subtitle", e.target.value)}/>
+      </label>
+      <label className="bp-field">
+        <span className="bp-field-lbl">Description</span>
+        <textarea className="bp-input" rows={2} value={draft.description} onChange={e => update("description", e.target.value)}/>
+      </label>
+
+      {/* PPT Upload */}
+      <div className="bp-editor-section">
+        <div className="bp-editor-section-h">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{color:"var(--bp-accent)"}}>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          Upload slide deck (PPTX)
+        </div>
+        <label className="bp-upload-zone">
+          <input type="file" accept=".pptx,.ppt" onChange={handlePptUpload} style={{display:"none"}}/>
+          <div className="bp-upload-inner">
+            {pptStatus === "done" ? (
+              <>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#67e8c0" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <span style={{color:"#67e8c0"}}>{pptName} — imported</span>
+              </>
+            ) : pptStatus === "processing" ? (
+              <>
+                <span className="bp-spinner"/>
+                <span style={{color:"var(--bp-accent)"}}>Processing {pptName}…</span>
+              </>
+            ) : (
+              <>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{color:"var(--bp-text-mute)"}}>
+                  <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+                </svg>
+                <span style={{color:"var(--bp-text-mute)", fontSize:13}}>Click to upload or drag a .pptx file</span>
+              </>
+            )}
+          </div>
+        </label>
+      </div>
+
+      {/* AI Prompt box */}
+      <div className="bp-editor-section">
+        <div className="bp-editor-section-h">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{color:"var(--bp-accent)"}}>
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          Generate content with AI
+        </div>
+        <div className="bp-field">
+          <textarea className="bp-input" rows={3}
+            placeholder="Describe what you want Claude to generate — e.g. 'Write a 5-slide deck on medication safety for DSPs' or 'Rewrite the description in plain language'"
+            value={promptText} onChange={e => setPromptText(e.target.value)}/>
+        </div>
+        <div style={{display:"flex", gap:8, alignItems:"center", marginTop:6}}>
+          <button className="bp-btn bp-btn-primary bp-btn-md" onClick={applyPrompt} disabled={!promptText.trim() || promptStatus==="processing"}>
+            {promptStatus === "processing" ? "Generating…" : "Generate →"}
+          </button>
+          {promptStatus === "done" && <span style={{fontSize:12, color:"#67e8c0"}}>✓ Applied to description — review and save</span>}
+        </div>
+      </div>
+
+      <div className="bp-editor-row" style={{gridTemplateColumns:"1fr 1fr"}}>
+        <div className="bp-stat-mini">
+          <div className="bp-stat-mini-v">{draft.slides.length}</div>
+          <div className="bp-stat-mini-l">Slides in deck</div>
+        </div>
+        <div className="bp-stat-mini">
+          <div className="bp-stat-mini-v">{draft.quiz.length}</div>
+          <div className="bp-stat-mini-l">Quiz questions</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Learners tab ───────────────────────────────────────────────────────────
+function AdminLearners({ learners, setLearners, progressByLearner, setProgressByLearner, modules }) {
+  const [query, setQuery]   = useState("");
+  const [editing, setEditing] = useState(null);
+  const [draft, setDraft]   = useState(null);
+  const [enrollFor, setEnrollFor] = useState(null);
+
+  const filtered = learners.filter(l =>
+    (l.name + l.email + l.role).toLowerCase().includes(query.toLowerCase())
+  );
+
+  function startInvite() {
+    setDraft({ id: "u" + (learners.length + 1), name: "", email: "", role: "Direct Support Professional", joined: new Date().toISOString().slice(0,10), status: "Onboarding" });
+    setEditing("new");
+  }
+  function startEdit(l) { setDraft({ ...l }); setEditing(l.id); }
+  function save() {
+    if (!/@(brightpath-mn|s360team)\.com$/i.test(draft.email)) { alert("Email must end with @brightpath-mn.com or @s360team.com"); return; }
+    if (editing === "new") setLearners([...learners, draft]);
+    else setLearners(learners.map(l => l.id === editing ? draft : l));
+    setEditing(null); setDraft(null);
+  }
+  function remove(id) {
+    if (!confirm("Remove this learner? Their progress and certificates will be archived.")) return;
+    setLearners(learners.filter(l => l.id !== id));
+  }
+
+  function toggleEnroll(learnerId, moduleId) {
+    setProgressByLearner(prev => {
+      const userP = { ...(prev[learnerId] || {}) };
+      if (userP[moduleId]) delete userP[moduleId];
+      else userP[moduleId] = { percent: 0, status: "not-started" };
+      return { ...prev, [learnerId]: userP };
+    });
+  }
+
+  return (
+    <div className="bp-page">
+      <FadeIn delay={60}>
+        <div className="bp-admin-head">
+          <div>
+            <div className="bp-welcome-eyebrow">Team</div>
+            <h1 className="bp-h-display">Learners</h1>
+            <p className="bp-admin-sub">{learners.length} learners · Invite staff, manage enrollment.</p>
+          </div>
+          <div className="bp-admin-head-actions">
+            <SearchInput value={query} onChange={setQuery} placeholder="Search learners…"/>
+            <GlassButton variant="primary" size="md" onClick={startInvite}>+ Invite Learner</GlassButton>
+          </div>
+        </div>
+      </FadeIn>
+
+      <FadeIn delay={140}>
+        <GlassCard padding={0} className="bp-table-card">
+          <table className="bp-table">
+            <thead>
+              <tr>
+                <th>Learner</th>
+                <th>Role</th>
+                <th style={{width: 130}}>Joined</th>
+                <th style={{width: 120}}>Status</th>
+                <th style={{width: 140}}>Enrolled</th>
+                <th style={{width: 200}}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(l => {
+                const enrollments = Object.keys(progressByLearner[l.id] || {}).length;
+                return (
+                  <tr key={l.id}>
+                    <td>
+                      <div className="bp-tbl-learner">
+                        <div className="bp-avatar bp-avatar-sm">{l.name.split(" ").map(s=>s[0]).slice(0,2).join("")}</div>
+                        <div>
+                          <div className="bp-tbl-title">{l.name}</div>
+                          <div className="bp-tbl-sub">{l.email}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>{l.role}</td>
+                    <td className="bp-mono">{l.joined}</td>
+                    <td><Pill tone={l.status === "Active" ? "success" : "accent"}>{l.status}</Pill></td>
+                    <td>{enrollments} / {modules.length}</td>
+                    <td>
+                      <div className="bp-row-actions">
+                        <button className="bp-link" onClick={() => setEnrollFor(l)}>Enroll</button>
+                        <button className="bp-link" onClick={() => startEdit(l)}>Edit</button>
+                        <button className="bp-link bp-link-danger" onClick={() => remove(l.id)}>Remove</button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </GlassCard>
+      </FadeIn>
+
+      {editing && draft && (
+        <Modal onClose={() => { setEditing(null); setDraft(null); }} title={editing === "new" ? "Invite learner" : "Edit learner"}>
+          <div className="bp-editor">
+            <label className="bp-field">
+              <span className="bp-field-lbl">Full name</span>
+              <input className="bp-input" value={draft.name} onChange={e => setDraft({...draft, name: e.target.value})} placeholder="Jordan Reyes"/>
+            </label>
+            <label className="bp-field">
+              <span className="bp-field-lbl">Work email (@brightpath-mn.com or @s360team.com)</span>
+              <input className="bp-input" value={draft.email} onChange={e => setDraft({...draft, email: e.target.value})} placeholder="jordan.reyes@brightpath-mn.com"/>
+            </label>
+            <div className="bp-editor-row">
+              <label className="bp-field">
+                <span className="bp-field-lbl">Role</span>
+                <select className="bp-input" value={draft.role} onChange={e => setDraft({...draft, role: e.target.value})}>
+                  <option>Direct Support Professional</option>
+                  <option>Case Manager</option>
+                  <option>Program Lead</option>
+                  <option>Trainer</option>
+                  <option>Administrator</option>
+                </select>
+              </label>
+              <label className="bp-field">
+                <span className="bp-field-lbl">Status</span>
+                <select className="bp-input" value={draft.status} onChange={e => setDraft({...draft, status: e.target.value})}>
+                  <option>Onboarding</option><option>Active</option><option>On Leave</option>
+                </select>
+              </label>
+            </div>
+          </div>
+          <div className="bp-modal-foot">
+            <GlassButton variant="ghost" size="md" onClick={() => { setEditing(null); setDraft(null); }}>Cancel</GlassButton>
+            <GlassButton variant="primary" size="md" onClick={save}>{editing === "new" ? "Send Invite" : "Save"}</GlassButton>
+          </div>
+        </Modal>
+      )}
+
+      {enrollFor && (
+        <Modal onClose={() => setEnrollFor(null)} title={`Enroll ${enrollFor.name}`}>
+          <p className="bp-helper" style={{marginBottom:14}}>Toggle modules on or off. Already-completed modules can't be unenrolled.</p>
+          <div className="bp-enroll-list">
+            {modules.map(m => {
+              const userP = progressByLearner[enrollFor.id] || {};
+              const isEnrolled = !!userP[m.id];
+              const isCompleted = userP[m.id]?.status === "completed";
+              return (
+                <label key={m.id} className={"bp-enroll-row " + (isEnrolled ? "is-on" : "")}>
+                  <input type="checkbox" checked={isEnrolled} disabled={isCompleted}
+                         onChange={() => toggleEnroll(enrollFor.id, m.id)}/>
+                  <div className="bp-enroll-meta">
+                    <div className="bp-tbl-title">{m.code} · {m.title}</div>
+                    <div className="bp-tbl-sub">{m.category} · {m.duration}</div>
+                  </div>
+                  {isCompleted && <Pill tone="success">Completed</Pill>}
+                </label>
+              );
+            })}
+          </div>
+          <div className="bp-modal-foot">
+            <GlassButton variant="primary" size="md" onClick={() => setEnrollFor(null)}>Done</GlassButton>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+// ─── Progress tab ───────────────────────────────────────────────────────────
+function AdminProgress({ learners, modules, progressByLearner }) {
+  const [filter, setFilter] = useState("");
+
+  const rows = useMemo(() => {
+    return learners.filter(l =>
+      (l.name + l.email + l.role).toLowerCase().includes(filter.toLowerCase())
+    ).map(l => {
+      const userP = progressByLearner[l.id] || {};
+      const total = modules.length;
+      const completed = modules.filter(m => userP[m.id]?.status === "completed").length;
+      const inProgress = modules.filter(m => userP[m.id]?.status === "in-progress").length;
+      const pct = Math.round((completed / total) * 100);
+      const scores = modules.map(m => userP[m.id]?.score).filter(s => typeof s === "number");
+      const avg = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : null;
+      return { learner: l, userP, completed, inProgress, total, pct, avg };
+    });
+  }, [learners, modules, progressByLearner, filter]);
+
+  // Aggregate stats
+  const totals = useMemo(() => {
+    let cs = 0, ps = 0, ns = 0;
+    learners.forEach(l => {
+      const userP = progressByLearner[l.id] || {};
+      modules.forEach(m => {
+        const s = userP[m.id]?.status;
+        if (s === "completed") cs++;
+        else if (s === "in-progress") ps++;
+        else ns++;
+      });
+    });
+    return { cs, ps, ns, total: learners.length * modules.length };
+  }, [learners, modules, progressByLearner]);
+
+  return (
+    <div className="bp-page">
+      <FadeIn delay={60}>
+        <div className="bp-admin-head">
+          <div>
+            <div className="bp-welcome-eyebrow">Reporting</div>
+            <h1 className="bp-h-display">Progress Overview</h1>
+            <p className="bp-admin-sub">Real-time training status across the team.</p>
+          </div>
+          <SearchInput value={filter} onChange={setFilter} placeholder="Search learners…"/>
+        </div>
+      </FadeIn>
+
+      <FadeIn delay={140}>
+        <div className="bp-stats">
+          <Stat label="Active learners" value={learners.length}/>
+          <Stat label="Completed enrollments" value={totals.cs}/>
+          <Stat label="In progress" value={totals.ps}/>
+          <Stat label="Avg completion" value={`${Math.round((totals.cs / Math.max(1, totals.total)) * 100)}%`}/>
+        </div>
+      </FadeIn>
+
+      <FadeIn delay={220}>
+        <GlassCard padding={0} className="bp-table-card">
+          <table className="bp-table bp-progress-table">
+            <thead>
+              <tr>
+                <th>Learner</th>
+                <th style={{width: 220}}>Overall progress</th>
+                <th style={{width: 110}}>Avg score</th>
+                {modules.map(m => (
+                  <th key={m.id} className="bp-progress-mod-h" title={m.title}>{m.code.replace("BP-","")}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(r => (
+                <tr key={r.learner.id}>
+                  <td>
+                    <div className="bp-tbl-learner">
+                      <div className="bp-avatar bp-avatar-sm">{r.learner.name.split(" ").map(s=>s[0]).slice(0,2).join("")}</div>
+                      <div>
+                        <div className="bp-tbl-title">{r.learner.name}</div>
+                        <div className="bp-tbl-sub">{r.learner.role}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="bp-progress-cell">
+                      <ProgressBar value={r.pct}/>
+                      <span className="bp-progress-cell-l">{r.completed}/{r.total}</span>
+                    </div>
+                  </td>
+                  <td>{r.avg !== null ? <b>{r.avg}%</b> : <span style={{opacity:.4}}>—</span>}</td>
+                  {modules.map(m => {
+                    const p = r.userP[m.id];
+                    const ch = !p ? "·" : p.status === "completed" ? "✓" : p.status === "in-progress" ? "◐" : "○";
+                    const cls = !p ? "none" : p.status === "completed" ? "ok" : p.status === "in-progress" ? "mid" : "off";
+                    return (
+                      <td key={m.id} className={"bp-progress-cell-mini " + cls}
+                          title={`${m.title}: ${p ? p.status + (p.score ? ` · ${p.score}%` : "") : "not enrolled"}`}>
+                        {ch}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </GlassCard>
+      </FadeIn>
+    </div>
+  );
+}
+
+// ─── Certificates tab ──────────────────────────────────────────────────────
+function AdminCertificates({ learners, modules, progressByLearner }) {
+  const [filter, setFilter] = useState("");
+
+  const certs = useMemo(() => {
+    const out = [];
+    learners.forEach(l => {
+      const userP = progressByLearner[l.id] || {};
+      modules.forEach(m => {
+        const p = userP[m.id];
+        if (p?.status === "completed") {
+          out.push({
+            id: `BP-${m.code}-${l.id.toUpperCase()}-${(p.completedOn || "").replaceAll("-","")}`,
+            learner: l, module: m,
+            score: p.score || 100,
+            issued: p.completedOn || "—",
+          });
+        }
+      });
+    });
+    return out.filter(c =>
+      (c.learner.name + c.learner.email + c.module.title + c.module.code + c.id)
+        .toLowerCase().includes(filter.toLowerCase())
+    );
+  }, [learners, modules, progressByLearner, filter]);
+
+  return (
+    <div className="bp-page">
+      <FadeIn delay={60}>
+        <div className="bp-admin-head">
+          <div>
+            <div className="bp-welcome-eyebrow">Records</div>
+            <h1 className="bp-h-display">Certificates Archive</h1>
+            <p className="bp-admin-sub">{certs.length} certificates issued · Read-only back-end copy.</p>
+          </div>
+          <SearchInput value={filter} onChange={setFilter} placeholder="Search certificates…"/>
+        </div>
+      </FadeIn>
+
+      <FadeIn delay={140}>
+        <GlassCard padding={0} className="bp-table-card">
+          <table className="bp-table">
+            <thead>
+              <tr>
+                <th style={{width: 260}}>Certificate ID</th>
+                <th>Learner</th>
+                <th>Module</th>
+                <th style={{width: 90}}>Score</th>
+                <th style={{width: 140}}>Issued</th>
+                <th style={{width: 120}}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {certs.map(c => (
+                <tr key={c.id}>
+                  <td className="bp-mono" style={{fontSize: 11}}>{c.id}</td>
+                  <td>
+                    <div className="bp-tbl-title">{c.learner.name}</div>
+                    <div className="bp-tbl-sub">{c.learner.email}</div>
+                  </td>
+                  <td>
+                    <div className="bp-tbl-title">{c.module.title}</div>
+                    <div className="bp-tbl-sub">{c.module.code}</div>
+                  </td>
+                  <td><b>{c.score}%</b></td>
+                  <td className="bp-mono">{c.issued}</td>
+                  <td>
+                    <div className="bp-row-actions">
+                      <button className="bp-link">View</button>
+                      <button className="bp-link">Download</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </GlassCard>
+      </FadeIn>
+    </div>
+  );
+}
+
+// ─── Shared helpers ─────────────────────────────────────────────────────────
+function SearchInput({ value, onChange, placeholder }) {
+  return (
+    <div className="bp-search">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}/>
+    </div>
+  );
+}
+
+function Modal({ children, onClose, title }) {
+  return (
+    <div className="bp-modal-overlay" onClick={onClose}>
+      <FadeIn delay={20} intensity="subtle">
+        <div className="bp-modal" onClick={e => e.stopPropagation()}>
+          <div className="bp-modal-head">
+            <h3 className="bp-h-3">{title}</h3>
+            <button className="bp-iconbtn" onClick={onClose} aria-label="Close">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+          <div className="bp-modal-body">{children}</div>
+        </div>
+      </FadeIn>
+    </div>
+  );
+}
+
+function catTone(category) {
+  if (category === "Onboarding") return "accent";
+  if (category === "Compliance") return "danger";
+  if (category === "Care Practice") return "success";
+  return "neutral";
+}
+
+window.AdminScreen = AdminScreen;
+
+
+// ─────────────────────────────────────────────
+
+// FAQ Screen — module-linked Q&A with lock state awareness + admin edit
+function FAQScreen({ progress, role }) {
+  const modules = window.BP_MODULES || [];
+  const [faqs, setFaqs]     = useState(window.BP_FAQS || []);
+  const [query, setQuery]   = useState("");
+  const [openId, setOpenId] = useState(null);
+  const [editing, setEditing] = useState(null); // null | 'new' | index
+  const [draftFaq, setDraftFaq] = useState(null);
+  const isAdmin = role === "admin";
+
+  function startAdd() {
+    setDraftFaq({ cat: "Getting Started", q: "", a: "", moduleId: null });
+    setEditing("new");
+  }
+  function startEdit(idx) {
+    setDraftFaq({ ...faqs[idx] });
+    setEditing(idx);
+  }
+  function saveFaq() {
+    if (!draftFaq.q.trim() || !draftFaq.a.trim()) return;
+    let next;
+    if (editing === "new") next = [...faqs, draftFaq];
+    else next = faqs.map((f, i) => i === editing ? draftFaq : f);
+    setFaqs(next);
+    window.BP_FAQS = next;
+    setEditing(null); setDraftFaq(null);
+  }
+  function deleteFaq(idx) {
+    if (!confirm("Delete this FAQ item?")) return;
+    const next = faqs.filter((_, i) => i !== idx);
+    setFaqs(next); window.BP_FAQS = next;
+  }
+
+  // Resolve lock state for a moduleId
+  function isLocked(moduleId) {
+    if (!moduleId) return false;
+    if (role === "admin") return false;
+    return !window.BP_isUnlocked(moduleId, progress || {});
+  }
+
+  function getModule(moduleId) {
+    return modules.find(m => m.id === moduleId) || null;
+  }
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return faqs;
+    return faqs.filter(f =>
+      (f.q + " " + f.a + " " + f.cat).toLowerCase().includes(q)
+    );
+  }, [query, faqs]);
+
+  const grouped = useMemo(() => {
+    const out = {};
+    filtered.forEach(f => { (out[f.cat] = out[f.cat] || []).push(f); });
+    return out;
+  }, [filtered]);
+
+  return (
+    <div className="bp-page bp-page-narrow">
+      <FadeIn delay={60}>
+        <div className="bp-welcome">
+          <div className="bp-welcome-eyebrow">Help Center</div>
+          <h1 className="bp-h-display">Frequently asked questions</h1>
+          <p className="bp-welcome-sub">Questions about BrightPath Learn, Claude, modules, certificates and admin — with module references for deeper learning.</p>
+        </div>
+      </FadeIn>
+
+      <FadeIn delay={120}>
+        <div className="bp-faq-search-wrap">
+          <div className="bp-search" style={{flex:1}}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search questions…"/>
+          </div>
+          {isAdmin && (
+            <GlassButton variant="primary" size="md" onClick={startAdd}>+ Add FAQ</GlassButton>
+          )}
+        </div>
+      </FadeIn>
+
+      {Object.keys(grouped).length === 0 ? (
+        <FadeIn delay={200}>
+          <GlassCard padding={36} style={{textAlign:"center"}}>
+            <p className="bp-welcome-sub" style={{margin:0}}>No matching questions. Try different keywords.</p>
+          </GlassCard>
+        </FadeIn>
+      ) : (
+        Object.keys(grouped).map((cat, ci) => (
+          <FadeIn key={cat} delay={180 + ci * 70}>
+            <div className="bp-faq-cat">
+              <h2 className="bp-h-2 bp-faq-cat-h">{cat}</h2>
+              <GlassCard padding={0} className="bp-faq-list">
+                {grouped[cat].map((f, i) => {
+                  const id       = cat + "-" + i;
+                  const open     = openId === id;
+                  const locked   = isLocked(f.moduleId);
+                  const mod      = f.moduleId ? getModule(f.moduleId) : null;
+                  const modIdx   = mod ? modules.findIndex(m => m.id === mod.id) : -1;
+                  const prevMod  = modIdx > 0 ? modules[modIdx - 1] : null;
+
+                  return (
+                    <div key={id} className={"bp-faq-item " + (open ? "is-open" : "") + (locked ? " is-locked-faq" : "")}>
+                      <div className="bp-faq-q-row">
+                        <button className="bp-faq-q" onClick={() => setOpenId(open ? null : id)}>
+                          <div className="bp-faq-q-inner">
+                            <span className="bp-faq-q-text">{f.q}</span>
+                            {mod && (
+                              <span className={"bp-faq-mod-badge " + (locked ? "is-locked" : "")}>
+                                {locked && (
+                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{marginRight:4, flexShrink:0}}>
+                                    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                  </svg>
+                                )}
+                                {mod.code}
+                              </span>
+                            )}
+                          </div>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="bp-faq-chev">
+                            <polyline points="6 9 12 15 18 9"/>
+                          </svg>
+                        </button>
+                        {isAdmin && (
+                          <div className="bp-faq-admin-btns">
+                            <button className="bp-link" style={{fontSize:11}} onClick={e => { e.stopPropagation(); startEdit(i + grouped[cat].slice(0,i).length - grouped[cat].slice(0,i).length); const realIdx = faqs.indexOf(f); startEdit(realIdx); }}>Edit</button>
+                            <button className="bp-link bp-link-danger" style={{fontSize:11}} onClick={e => { e.stopPropagation(); deleteFaq(faqs.indexOf(f)); }}>Delete</button>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="bp-faq-a-wrap">
+                        {locked ? (
+                          <div className="bp-faq-locked-msg">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{color:"var(--bp-accent)", marginBottom:10}}>
+                              <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                            </svg>
+                            <p className="bp-faq-locked-title">This answer is covered in <b>{mod.code} — {mod.title}</b>.</p>
+                            <p className="bp-faq-locked-sub">
+                              {prevMod
+                                ? <>Complete <b>{prevMod.code} — {prevMod.title}</b> to unlock this module.</>
+                                : <>This module is available. Start it from your Dashboard.</>}
+                            </p>
+                            <GlassButton variant="primary" size="md" style={{marginTop:12}}
+                              onClick={() => { /* navigate handled by parent */ }}>
+                              Go to Dashboard →
+                            </GlassButton>
+                          </div>
+                        ) : (
+                          <div className="bp-faq-a">
+                            <p style={{margin:"0 0 10px"}}>{f.a}</p>
+                            {mod && (
+                              <div className="bp-faq-module-ref">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{color:"var(--bp-accent)", flexShrink:0}}>
+                                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                                </svg>
+                                <span>Covered in depth in <b>{mod.code} · {mod.title}</b>{progress?.[mod.id]?.status === "completed" ? " ✓" : ""}.</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </GlassCard>
+            </div>
+          </FadeIn>
+        ))
+      )}
+
+      <FadeIn delay={480}>
+        <GlassCard padding={32} style={{marginTop:24, textAlign:"center"}}>
+          <Pill tone="accent">STILL STUCK?</Pill>
+          <h2 className="bp-h-2" style={{marginTop:14, marginBottom:8}}>Reach out to your BrightPath administrator.</h2>
+          <p className="bp-welcome-sub" style={{margin:0}}>
+            For learning platform issues, email{" "}
+            <a className="bp-link" style={{textDecoration:"underline"}} href="mailto:learning@brightpath-mn.com">learning@brightpath-mn.com</a>.
+          </p>
+        </GlassCard>
+      </FadeIn>
+
+      {/* FAQ Edit/Add Modal */}
+      {editing !== null && draftFaq && (
+        <div className="bp-modal-overlay" onClick={() => { setEditing(null); setDraftFaq(null); }}>
+          <FadeIn delay={20} intensity="subtle">
+            <div className="bp-modal" onClick={e => e.stopPropagation()}>
+              <div className="bp-modal-head">
+                <h3 className="bp-h-3">{editing === "new" ? "Add FAQ item" : "Edit FAQ item"}</h3>
+                <button className="bp-iconbtn" onClick={() => { setEditing(null); setDraftFaq(null); }} aria-label="Close">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+              <div className="bp-modal-body">
+                <div className="bp-editor">
+                  <div className="bp-editor-row" style={{gridTemplateColumns:"1fr 1fr"}}>
+                    <label className="bp-field">
+                      <span className="bp-field-lbl">Category</span>
+                      <select className="bp-input" value={draftFaq.cat} onChange={e => setDraftFaq({...draftFaq, cat: e.target.value})}>
+                        <option>Getting Started</option><option>About Claude</option>
+                        <option>Modules</option><option>Certificates</option>
+                        <option>Account</option><option>Admin</option><option>Troubleshooting</option>
+                      </select>
+                    </label>
+                    <label className="bp-field">
+                      <span className="bp-field-lbl">Linked module (optional)</span>
+                      <select className="bp-input" value={draftFaq.moduleId || ""} onChange={e => setDraftFaq({...draftFaq, moduleId: e.target.value || null})}>
+                        <option value="">None</option>
+                        {modules.map(m => <option key={m.id} value={m.id}>{m.code} — {m.title}</option>)}
+                      </select>
+                    </label>
+                  </div>
+                  <label className="bp-field">
+                    <span className="bp-field-lbl">Question</span>
+                    <input className="bp-input" value={draftFaq.q} onChange={e => setDraftFaq({...draftFaq, q: e.target.value})} placeholder="e.g. How do I reset my password?"/>
+                  </label>
+                  <label className="bp-field">
+                    <span className="bp-field-lbl">Answer</span>
+                    <textarea className="bp-input" rows={4} value={draftFaq.a} onChange={e => setDraftFaq({...draftFaq, a: e.target.value})} placeholder="Clear, concise answer…"/>
+                  </label>
+                </div>
+              </div>
+              <div className="bp-modal-foot">
+                <GlassButton variant="ghost" size="md" onClick={() => { setEditing(null); setDraftFaq(null); }}>Cancel</GlassButton>
+                <GlassButton variant="primary" size="md" onClick={saveFaq} disabled={!draftFaq.q.trim() || !draftFaq.a.trim()}>
+                  {editing === "new" ? "Add to FAQ" : "Save changes"}
+                </GlassButton>
+              </div>
+            </div>
+          </FadeIn>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+// ─── Completion (Congrats) Modal ───────────────────────────────────────────
+function CongratsModal({ module, score, isLastModule, onDownloadCert, onNextModule, onBackToDashboard, onClose }) {
+  return (
+    <div className="bp-modal-overlay bp-congrats-overlay" onClick={onClose}>
+      <FadeIn delay={20} intensity="medium">
+        <div className="bp-congrats" onClick={e => e.stopPropagation()}>
+          <div className="bp-congrats-confetti" aria-hidden="true">
+            {Array.from({length: 24}).map((_, i) => (
+              <span key={i} style={{
+                left: Math.random() * 100 + "%",
+                background: ["#FFD200","#fff","#67e8c0","#A78BFA"][i % 4],
+                animationDelay: (Math.random() * 0.8) + "s",
+                animationDuration: (2 + Math.random() * 1.5) + "s",
+                transform: "rotate(" + (Math.random() * 360) + "deg)",
+              }}/>
+            ))}
+          </div>
+          <div className="bp-congrats-badge">
+            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <Pill tone="success" style={{margin:"0 0 14px"}}>{isLastModule ? "ALL MODULES COMPLETE" : "MODULE COMPLETE"}</Pill>
+          <h1 className="bp-h-display" style={{fontSize:"clamp(36px,4vw,52px)"}}>Congratulations!</h1>
+          <p className="bp-congrats-sub">
+            You have completed <b>{module.title}</b> with a score of <b style={{color:"var(--bp-accent)"}}>{score}%</b>.
+            {isLastModule
+              ? " You have finished every module in the BrightPath training series."
+              : " Your certificate is ready and the next module is now unlocked."}
+          </p>
+          <div className="bp-congrats-actions">
+            <GlassButton variant="primary" size="lg" onClick={onDownloadCert}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{marginRight:8, verticalAlign:"-2px"}}>
+                <circle cx="12" cy="8" r="6"/><path d="M9 14l-2 7 5-3 5 3-2-7"/>
+              </svg>
+              View &amp; Download Certificate
+            </GlassButton>
+            {!isLastModule && (
+              <GlassButton variant="ghost" size="lg" onClick={onNextModule}>
+                Continue to next module →
+              </GlassButton>
+            )}
+            <button className="bp-link" onClick={onBackToDashboard}>Return to dashboard</button>
+          </div>
+        </div>
+      </FadeIn>
+    </div>
+  );
+}
+
+window.FAQScreen = FAQScreen;
+window.CongratsModal = CongratsModal;
+
+
+// ─────────────────────────────────────────────
+
+// BrightPath LMS — main app, state, router
+// ─── Tweakable defaults (persisted via host) ────────────────────────────────
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "background": "photo",
+  "glassOpacity": 0.10,
+  "accent": "#FFD200",
+  "animation": "medium",
+  "role": "learner",
+  "density": "comfortable"
+}/*EDITMODE-END*/;
+
+function App() {
+  const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+  // ─── Auth state ──────────────────────────────────────────────────────────
+  const [auth, setAuth] = useState(null); // { email, role }
+
+  // ─── App data (modules + learners + progress) ────────────────────────────
+  const [modules, setModules]   = useState(window.BP_MODULES);
+  const [learners, setLearners] = useState(window.BP_LEARNERS);
+  const [progressByLearner, setProgressByLearner] = useState(window.BP_SEED_PROGRESS);
+
+  // ─── View state ──────────────────────────────────────────────────────────
+  // For learner: view = 'dashboard' | 'modules' | 'certificates' | 'module' | 'quiz' | 'certificate'
+  const [view, setView]               = useState("dashboard");
+  const [currentModuleId, setCurrentModuleId] = useState(null);
+  const [adminTab, setAdminTab]       = useState("modules");
+
+  // ─── Current user resolution ─────────────────────────────────────────────
+  const currentUser = useMemo(() => {
+    if (!auth) return null;
+    if (auth.role === "admin") {
+      return { id: "admin", name: "Site Administrator", email: auth.email, role: "Administrator" };
+    }
+    // For learner: try to find existing learner record by email, else default to BP_CURRENT_LEARNER
+    const match = learners.find(l => l.email.toLowerCase() === auth.email.toLowerCase());
+    return match || window.BP_CURRENT_LEARNER;
+  }, [auth, learners]);
+
+  // ─── Current learner's progress slice ────────────────────────────────────
+  const myProgress = useMemo(() => {
+    if (!currentUser) return {};
+    return progressByLearner[currentUser.id] || {};
+  }, [currentUser, progressByLearner]);
+
+  function updateMyProgress(moduleId, patch) {
+    if (!currentUser) return;
+    setProgressByLearner(prev => {
+      const userP = { ...(prev[currentUser.id] || {}) };
+      userP[moduleId] = { ...(userP[moduleId] || { percent: 0, status: "not-started" }), ...patch };
+      return { ...prev, [currentUser.id]: userP };
+    });
+  }
+
+  // ─── Sync tweak role with auth role ──────────────────────────────────────
+  useEffect(() => {
+    if (auth && auth.role !== t.role) setTweak("role", auth.role);
+  }, [auth]);
+
+  // Role switch from tweaks — instant swap (demo)
+  useEffect(() => {
+    if (!auth) return;
+    if (t.role !== auth.role) {
+      setAuth({ ...auth, role: t.role });
+      setView("dashboard");
+      setAdminTab("modules");
+    }
+  }, [t.role]);
+
+  // ─── Density class on root ────────────────────────────────────────────────
+  useEffect(() => {
+    document.documentElement.dataset.density = t.density;
+    document.documentElement.dataset.bg = t.background;
+    document.documentElement.style.setProperty("--bp-accent", t.accent);
+    document.documentElement.style.setProperty("--bp-glass-op", String(t.glassOpacity));
+  }, [t.density, t.background, t.accent, t.glassOpacity]);
+
+  // ─── Auth handlers ───────────────────────────────────────────────────────
+  function handleAuth({ email, role }) {
+    setAuth({ email, role });
+    setTweak("role", role);
+    setView("dashboard");
+    setAdminTab("modules");
+  }
+
+  function handleLogout() {
+    setAuth(null);
+    setView("dashboard");
+  }
+
+  // ─── Background variant resolution (mix logic) ───────────────────────────
+  const bgVariant = useMemo(() => {
+    if (t.background === "mix") {
+      // show photo on auth/dashboard, gradient elsewhere
+      if (!auth) return "photo";
+      if (auth.role === "learner" && (view === "dashboard" || view === "certificate")) return "photo";
+      return "gradient";
+    }
+    return t.background; // 'photo' | 'gradient'
+  }, [t.background, view, auth]);
+
+  // ─── Render ──────────────────────────────────────────────────────────────
+  return (
+    <div className="bp-app" data-anim={t.animation}>
+      <Background variant={bgVariant}/>
+
+      {!auth ? (
+        <LoginScreen onAuth={handleAuth}/>
+      ) : (
+        <>
+          <Header
+            role={auth.role}
+            currentUser={currentUser}
+            view={view}
+            adminTab={adminTab}
+            setAdminTab={(t) => { setAdminTab(t); }}
+            onNavigate={({ view }) => setView(view)}
+            onLogout={handleLogout}
+          />
+
+          <main className="bp-main">
+            {auth.role === "learner" && view === "dashboard" && (
+              <LearnerDashboard
+                currentUser={currentUser}
+                progress={myProgress}
+                onOpenModule={(id) => {
+                  if (!window.BP_isUnlocked(id, myProgress)) return;
+                  setCurrentModuleId(id); setView("module");
+                }}
+                onOpenCertificate={(id) => { setCurrentModuleId(id); setView("certificate"); }}
+                onOpenAllModules={() => setView("modules")}
+              />
+            )}
+
+            {auth.role === "learner" && view === "modules" && (
+              <AllModulesView
+                progress={myProgress}
+                onOpenModule={(id) => {
+                  if (!window.BP_isUnlocked(id, myProgress)) return;
+                  setCurrentModuleId(id); setView("module");
+                }}
+              />
+            )}
+
+            {auth.role === "learner" && view === "certificates" && (
+              <MyCertificatesView
+                progress={myProgress}
+                onOpenCertificate={(id) => { setCurrentModuleId(id); setView("certificate"); }}
+              />
+            )}
+
+            {auth.role === "learner" && view === "faq" && <FAQScreen progress={myProgress} role="learner"/>}
+
+            {auth.role === "learner" && view === "module" && currentModuleId && (
+              <ModuleDeck
+                moduleId={currentModuleId}
+                progress={myProgress[currentModuleId] || {}}
+                onProgressUpdate={(patch) => updateMyProgress(currentModuleId, patch)}
+                onLaunchQuiz={() => setView("quiz")}
+                onExit={() => setView("dashboard")}
+              />
+            )}
+
+            {auth.role === "learner" && view === "quiz" && currentModuleId && (
+              <QuizScreen
+                moduleId={currentModuleId}
+                passingScore={80}
+                onPass={({ score }) => {
+                  updateMyProgress(currentModuleId, {
+                    percent: 100, status: "completed", score,
+                    completedOn: new Date().toISOString().slice(0,10),
+                  });
+                }}
+                onRetake={() => {}}
+                onExit={() => setView("module")}
+                onViewCertificate={() => setView("certificate")}
+                onNextModule={() => {
+                  const i = modules.findIndex(m => m.id === currentModuleId);
+                  const next = modules[i + 1];
+                  if (next) { setCurrentModuleId(next.id); setView("module"); }
+                  else setView("dashboard");
+                }}
+              />
+            )}
+
+            {auth.role === "learner" && view === "certificate" && currentModuleId && (
+              <CertificateScreen
+                moduleId={currentModuleId}
+                currentUser={currentUser}
+                progress={myProgress}
+                onExit={() => setView("dashboard")}
+                onBackToDashboard={() => setView("dashboard")}
+              />
+            )}
+
+            {auth.role === "admin" && adminTab === "faq" && <FAQScreen progress={{}} role="admin"/>}
+            {auth.role === "admin" && adminTab !== "faq" && (
+              <AdminScreen
+                tab={adminTab}
+                modules={modules} setModules={setModules}
+                learners={learners} setLearners={setLearners}
+                progressByLearner={progressByLearner} setProgressByLearner={setProgressByLearner}
+              />
+            )}
+          </main>
+        </>
+      )}
+
+      {/* Tweaks panel */}
+      <TweaksPanel>
+        <TweakSection label="Cinematic"/>
+        <TweakRadio  label="Background" value={t.background}
+                     options={[
+                       { value: "photo",    label: "Photo" },
+                       { value: "gradient", label: "Gradient" },
+                       { value: "mix",      label: "Mix" },
+                     ]}
+                     onChange={(v) => setTweak("background", v)}/>
+        <TweakSlider label="Glass opacity" value={t.glassOpacity}
+                     min={0.04} max={0.25} step={0.01}
+                     format={(v) => `${Math.round(v * 100)}%`}
+                     onChange={(v) => setTweak("glassOpacity", v)}/>
+        <TweakRadio  label="Animation" value={t.animation}
+                     options={["subtle","medium","cinematic"]}
+                     onChange={(v) => setTweak("animation", v)}/>
+
+        <TweakSection label="Theme"/>
+        <TweakColor  label="Accent" value={t.accent}
+                     options={["#FFD200","#F59E0B","#22D3EE","#A78BFA","#34D399"]}
+                     onChange={(v) => setTweak("accent", v)}/>
+        <TweakRadio  label="Density" value={t.density}
+                     options={["compact","comfortable"]}
+                     onChange={(v) => setTweak("density", v)}/>
+
+        {auth && (
+          <>
+            <TweakSection label="Role"/>
+            <TweakRadio label="View as" value={t.role}
+                        options={["learner","admin"]}
+                        onChange={(v) => setTweak("role", v)}/>
+            <p style={{fontSize:11, color:"rgba(41,38,27,.55)", margin:"6px 0 0"}}>
+              Swap roles without logging out. Admin uses <b>admin@brightpath-mn.com</b>.
+            </p>
+          </>
+        )}
+      </TweaksPanel>
+    </div>
+  );
+}
+
+// ─── All Modules view (learner browse) ──────────────────────────────────────
+function AllModulesView({ progress, onOpenModule }) {
+  const modules = window.BP_MODULES;
+  const [cat, setCat] = useState("All");
+  const cats = ["All", ...Array.from(new Set(modules.map(m => m.category)))];
+  const filtered = cat === "All" ? modules : modules.filter(m => m.category === cat);
+
+  return (
+    <div className="bp-page">
+      <FadeIn delay={60}>
+        <div className="bp-welcome">
+          <div className="bp-welcome-eyebrow">Catalog</div>
+          <h1 className="bp-h-display">All Modules</h1>
+          <p className="bp-welcome-sub">Browse the full BrightPath training library.</p>
+        </div>
+      </FadeIn>
+
+      <FadeIn delay={140}>
+        <div className="bp-cat-row">
+          {cats.map(c => (
+            <button key={c}
+                    className={"bp-cat-pill " + (cat === c ? "is-active" : "")}
+                    onClick={() => setCat(c)}>{c}</button>
+          ))}
+        </div>
+      </FadeIn>
+
+      <div className="bp-mod-grid">
+        {filtered.map((m, i) => {
+          const fullIdx = modules.findIndex(x => x.id === m.id);
+          const unlocked = window.BP_isUnlocked(m.id, progress);
+          const prevModule = fullIdx > 0 ? modules[fullIdx - 1] : null;
+          const lockedReason = prevModule
+            ? `Unlocks after completing Module ${String(fullIdx).padStart(2, "0")} — ${prevModule.title}.`
+            : "";
+          return (
+            <FadeIn key={m.id} delay={200 + i * 50}>
+              <ModuleCardLite module={m} progress={progress[m.id] || {}} locked={!unlocked} lockedReason={lockedReason} onOpen={() => onOpenModule(m.id)}/>
+            </FadeIn>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ModuleCardLite({ module, progress, onOpen, locked, lockedReason }) {
+  const pct = progress.percent || 0;
+  const completed = progress.status === "completed";
+  return (
+    <GlassCard className={"bp-mod-card " + (locked ? "is-locked" : "")} padding={0}>
+      <div className="bp-mod-thumb">
+        <div className="bp-mod-thumb-code">{module.code}</div>
+        <div className="bp-mod-thumb-glyph" dangerouslySetInnerHTML={{__html: window.BP_MOD_ICON(module.category)}}/>
+        {completed && !locked && <Pill tone="success" style={{position:"absolute", top:14, right:14}}>Completed</Pill>}
+        {locked && (
+          <Pill tone="neutral" style={{position:"absolute", top:14, right:14}}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{marginRight:4}}>
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            Locked
+          </Pill>
+        )}
+        {locked && <div className="bp-mod-lock-overlay" aria-hidden="true"/>}
+      </div>
+      <div className="bp-mod-body">
+        <div className="bp-mod-cat">{module.category} · {module.duration}</div>
+        <h3 className="bp-mod-title">{module.title}</h3>
+        <p className="bp-mod-desc">{locked ? lockedReason : module.description}</p>
+        <div className="bp-mod-progress">
+          <ProgressBar value={pct}/>
+          <span className="bp-mod-pct">{pct}%</span>
+        </div>
+        <div className="bp-mod-cta">
+          {locked ? (
+            <GlassButton variant="ghost" size="md" disabled>Locked</GlassButton>
+          ) : (
+            <GlassButton variant={completed ? "ghost" : "primary"} size="md" onClick={onOpen}>
+              {completed ? "Review" : pct > 0 ? "Continue" : "Start"}
+            </GlassButton>
+          )}
+        </div>
+      </div>
+    </GlassCard>
+  );
+}
+
+// ─── My Certificates view (learner) ────────────────────────────────────────
+function MyCertificatesView({ progress, onOpenCertificate }) {
+  const modules = window.BP_MODULES;
+  const earned = modules.filter(m => progress[m.id]?.status === "completed");
+
+  return (
+    <div className="bp-page">
+      <FadeIn delay={60}>
+        <div className="bp-welcome">
+          <div className="bp-welcome-eyebrow">Achievements</div>
+          <h1 className="bp-h-display">My Certificates</h1>
+          <p className="bp-welcome-sub">{earned.length} certificate{earned.length === 1 ? "" : "s"} earned · {modules.length - earned.length} to go.</p>
+        </div>
+      </FadeIn>
+
+      {earned.length === 0 ? (
+        <FadeIn delay={140}>
+          <GlassCard padding={48} style={{textAlign:"center"}}>
+            <div style={{fontSize:42, marginBottom:8, opacity:.4}}>✦</div>
+            <h2 className="bp-h-2">No certificates yet.</h2>
+            <p className="bp-welcome-sub">Complete a module and pass its knowledge check to earn your first certificate.</p>
+          </GlassCard>
+        </FadeIn>
+      ) : (
+        <div className="bp-cert-grid">
+          {earned.map((m, i) => (
+            <FadeIn key={m.id} delay={140 + i * 60}>
+              <GlassCard className="bp-cert-card" padding={0} onClick={() => onOpenCertificate(m.id)}>
+                <div className="bp-cert-card-preview">
+                  <div className="bp-cert-card-tint"/>
+                  <div className="bp-cert-card-inner">
+                    <BPLogo size={32} wordmark={false}/>
+                    <div className="bp-cert-card-eyebrow">Certificate of Completion</div>
+                    <div className="bp-cert-card-title">{m.title}</div>
+                    <div className="bp-cert-card-meta">{progress[m.id].score}% · {progress[m.id].completedOn}</div>
+                  </div>
+                </div>
+                <div className="bp-cert-card-foot">
+                  <span className="bp-mono" style={{fontSize:11, opacity:.65}}>BP-{m.code}</span>
+                  <GlassButton variant="ghost" size="sm">View →</GlassButton>
+                </div>
+              </GlassCard>
+            </FadeIn>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Mount ──────────────────────────────────────────────────────────────────
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+
+</script>
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

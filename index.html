@@ -10,6 +10,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- Google Identity Services — real OAuth sign-in -->
 <script src="https://accounts.google.com/gsi/client" async></script>
+<!-- Supabase JS — backend persistence -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
 <style>
   /* ─── Tokens ────────────────────────────────────────────────────────── */
@@ -733,6 +735,7 @@
   .bp-upload-inner{ display: flex; align-items: center; gap: 10px; padding: 14px 16px; }
   .bp-spinner{ width:16px; height:16px; border-radius:50%; border:2px solid rgba(255,210,0,.3); border-top-color:var(--bp-accent); animation: spin .7s linear infinite; flex:0 0 auto; }
   @keyframes spin{ to{ transform: rotate(360deg); } }
+  @keyframes bp-spin{ to{ transform: rotate(360deg); } }
   .bp-enroll-list{ display: flex; flex-direction: column; gap: 8px; max-height: 380px; overflow-y: auto; padding-right: 4px; }
   .bp-enroll-row{
     display: grid; grid-template-columns: 24px 1fr auto; gap: 12px; align-items: center;
@@ -1016,6 +1019,116 @@ window.BP_MOD_ICON = function(category) {
 <script type="text/babel" id="bp-bundle">
 // ─── Global React hooks (single destructuring for the whole bundle) ────────
 const { useState, useEffect, useMemo, useRef, useCallback } = React;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BrightPath Backend — Supabase persistence layer
+// All calls are fire-and-forget (non-blocking). The UI updates locally first,
+// then syncs to the DB in the background. Errors are logged, never thrown.
+// ─────────────────────────────────────────────────────────────────────────────
+const _BP_SUPABASE_URL  = "https://memcdxfldbytydwnuwps.supabase.co";
+const _BP_SUPABASE_ANON = "sb_publishable_GaygIwGGNi82kgXV7G7AUg_73z7dwZU";
+const _sb = window.supabase.createClient(_BP_SUPABASE_URL, _BP_SUPABASE_ANON);
+
+const BPBackend = {
+
+  // Upsert learner profile on every sign-in
+  async upsertLearner({ email, name, picture, role }) {
+    const { error } = await _sb.from("bp_learners").upsert(
+      { email, name, picture, role, updated_at: new Date().toISOString() },
+      { onConflict: "email" }
+    );
+    if (error) console.warn("[BP] upsertLearner:", error.message);
+  },
+
+  // Fetch all module progress for one learner
+  // Returns: { m01: { status, percent, score, completedOn }, … }
+  async fetchProgress(email) {
+    const { data, error } = await _sb.from("bp_progress")
+      .select("module_id, status, percent, score, completed_at")
+      .eq("learner_email", email);
+    if (error) { console.warn("[BP] fetchProgress:", error.message); return {}; }
+    const out = {};
+    (data || []).forEach(r => {
+      out[r.module_id] = {
+        status:      r.status,
+        percent:     r.percent ?? 0,
+        score:       r.score,
+        completedOn: r.completed_at ? r.completed_at.slice(0, 10) : null,
+      };
+    });
+    return out;
+  },
+
+  // Save / update one module's progress row
+  async upsertProgress(email, moduleId, patch) {
+    const payload = {
+      learner_email: email,
+      module_id:     moduleId,
+      updated_at:    new Date().toISOString(),
+    };
+    if (patch.status  !== undefined) payload.status  = patch.status;
+    if (patch.percent !== undefined) payload.percent  = patch.percent;
+    if (patch.score   !== undefined) payload.score    = patch.score;
+    if (patch.status === "completed") payload.completed_at = new Date().toISOString();
+    const { error } = await _sb.from("bp_progress").upsert(
+      payload, { onConflict: "learner_email,module_id" }
+    );
+    if (error) console.warn("[BP] upsertProgress:", error.message);
+  },
+
+  // Record a quiz attempt (audit + analytics)
+  async recordQuiz(email, moduleId, score, passed) {
+    const { error } = await _sb.from("bp_quiz_submissions")
+      .insert({ learner_email: email, module_id: moduleId, score, passed });
+    if (error) console.warn("[BP] recordQuiz:", error.message);
+  },
+
+  // Issue (or re-issue) a certificate
+  async issueCertificate(email, moduleId, moduleTitle, score) {
+    const { error } = await _sb.from("bp_certificates").upsert(
+      { learner_email: email, module_id: moduleId, module_title: moduleTitle, score },
+      { onConflict: "learner_email,module_id" }
+    );
+    if (error) console.warn("[BP] issueCertificate:", error.message);
+  },
+
+  // Admin: fetch all learner profiles
+  async fetchAllLearners() {
+    const { data, error } = await _sb.from("bp_learners")
+      .select("*").order("joined_at", { ascending: false });
+    if (error) { console.warn("[BP] fetchAllLearners:", error.message); return []; }
+    return (data || []).map(r => ({
+      id:        "db-" + r.email.replace(/[^a-z0-9]/gi, ""),
+      email:     r.email,
+      name:      r.name  || r.email,
+      picture:   r.picture || null,
+      role:      r.role  || "learner",
+      job_title: r.job_title || "Direct Support Professional",
+      status:    r.status   || "Onboarding",
+      joined:    r.joined_at ? r.joined_at.slice(0, 10) : "",
+    }));
+  },
+
+  // Admin: fetch all learners' progress keyed by email
+  async fetchAllProgress() {
+    const { data, error } = await _sb.from("bp_progress").select("*");
+    if (error) { console.warn("[BP] fetchAllProgress:", error.message); return {}; }
+    const out = {};
+    (data || []).forEach(r => {
+      if (!out[r.learner_email]) out[r.learner_email] = {};
+      out[r.learner_email][r.module_id] = {
+        status:      r.status,
+        percent:     r.percent ?? 0,
+        score:       r.score,
+        completedOn: r.completed_at ? r.completed_at.slice(0, 10) : null,
+      };
+    });
+    return out;
+  },
+};
+
+// Session key — persists Google identity across refreshes
+const BP_SESSION_KEY = "bp_session_v1";
 
 
 // tweaks-panel.jsx
@@ -3784,12 +3897,39 @@ function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
 
   // ─── Auth state ──────────────────────────────────────────────────────────
-  const [auth, setAuth] = useState(null); // { email, role }
+  const [auth, setAuth] = useState(null); // { email, role, name, picture }
+  const [dbReady, setDbReady] = useState(false); // true once initial DB load done
 
   // ─── App data (modules + learners + progress) ────────────────────────────
   const [modules, setModules]   = useState(window.BP_MODULES);
   const [learners, setLearners] = useState(window.BP_LEARNERS);
   const [progressByLearner, setProgressByLearner] = useState(window.BP_SEED_PROGRESS);
+
+  // ─── Session restore — re-hydrate from localStorage on first load ─────────
+  useEffect(() => {
+    const saved = localStorage.getItem(BP_SESSION_KEY);
+    if (!saved) { setDbReady(true); return; }
+    try {
+      const session = JSON.parse(saved);
+      if (!session?.email || !session?.role) { localStorage.removeItem(BP_SESSION_KEY); setDbReady(true); return; }
+      setAuth(session);
+      setTweak("role", session.role);
+      // Fetch this user's progress from DB
+      BPBackend.fetchProgress(session.email).then(dbProg => {
+        if (dbProg && Object.keys(dbProg).length > 0) {
+          setProgressByLearner(prev => ({ ...prev, [session.email]: dbProg }));
+        }
+        setDbReady(true);
+      });
+      // Admin: also pull all learners + all progress from DB
+      if (session.role === "admin") {
+        BPBackend.fetchAllLearners().then(rows => { if (rows.length) setLearners(rows); });
+        BPBackend.fetchAllProgress().then(allProg => {
+          if (Object.keys(allProg).length) setProgressByLearner(prev => ({ ...prev, ...allProg }));
+        });
+      }
+    } catch(e) { localStorage.removeItem(BP_SESSION_KEY); setDbReady(true); }
+  }, []);
 
   // ─── View state ──────────────────────────────────────────────────────────
   // For learner: view = 'dashboard' | 'modules' | 'certificates' | 'module' | 'quiz' | 'certificate'
@@ -3819,18 +3959,34 @@ function App() {
   }, [auth, learners]);
 
   // ─── Current learner's progress slice ────────────────────────────────────
+  // DB users are keyed by email; seed users by their original id
   const myProgress = useMemo(() => {
     if (!currentUser) return {};
-    return progressByLearner[currentUser.id] || {};
+    return progressByLearner[currentUser.email]
+        || progressByLearner[currentUser.id]
+        || {};
   }, [currentUser, progressByLearner]);
 
   function updateMyProgress(moduleId, patch) {
     if (!currentUser) return;
+    const key = currentUser.email || currentUser.id;
     setProgressByLearner(prev => {
-      const userP = { ...(prev[currentUser.id] || {}) };
+      const base  = prev[key] || prev[currentUser.id] || {};
+      const userP = { ...base };
       userP[moduleId] = { ...(userP[moduleId] || { percent: 0, status: "not-started" }), ...patch };
-      return { ...prev, [currentUser.id]: userP };
+      return { ...prev, [key]: userP };
     });
+    // ── Supabase persistence (non-blocking) ──────────────────────────────
+    if (currentUser.email) {
+      BPBackend.upsertProgress(currentUser.email, moduleId, patch);
+      if (patch.status === "completed") {
+        const mod = modules.find(m => m.id === moduleId);
+        BPBackend.issueCertificate(currentUser.email, moduleId, mod?.title || moduleId, patch.score ?? null);
+        if (typeof patch.score === "number") {
+          BPBackend.recordQuiz(currentUser.email, moduleId, patch.score, patch.score >= 80);
+        }
+      }
+    }
   }
 
   // ─── Sync tweak role with auth role ──────────────────────────────────────
@@ -3858,10 +4014,30 @@ function App() {
 
   // ─── Auth handlers ───────────────────────────────────────────────────────
   function handleAuth({ email, role, name, picture }) {
-    setAuth({ email, role, name: name || email, picture: picture || null });
+    const authData = { email, role, name: name || email, picture: picture || null };
+    // Persist session so page refresh doesn't log the user out
+    localStorage.setItem(BP_SESSION_KEY, JSON.stringify(authData));
+    setAuth(authData);
     setTweak("role", role);
     setView("dashboard");
     setAdminTab("modules");
+
+    // ── Supabase sync (non-blocking) ────────────────────────────────────
+    BPBackend.upsertLearner({ email, name: name || email, picture, role })
+      .then(() => BPBackend.fetchProgress(email))
+      .then(dbProg => {
+        if (dbProg && Object.keys(dbProg).length > 0) {
+          setProgressByLearner(prev => ({ ...prev, [email]: dbProg }));
+        }
+        setDbReady(true);
+      });
+
+    if (role === "admin") {
+      BPBackend.fetchAllLearners().then(rows => { if (rows.length) setLearners(rows); });
+      BPBackend.fetchAllProgress().then(allProg => {
+        if (Object.keys(allProg).length) setProgressByLearner(prev => ({ ...prev, ...allProg }));
+      });
+    }
   }
 
   function handleLogout() {
@@ -3869,7 +4045,10 @@ function App() {
     if (auth?.email && window.google?.accounts?.id) {
       window.google.accounts.id.revoke(auth.email, () => {});
     }
+    localStorage.removeItem(BP_SESSION_KEY);
     setAuth(null);
+    setProgressByLearner(window.BP_SEED_PROGRESS); // reset to seed
+    setLearners(window.BP_LEARNERS);
     setView("dashboard");
   }
 
@@ -3889,8 +4068,19 @@ function App() {
     <div className="bp-app" data-anim={t.animation}>
       <Background variant={bgVariant}/>
 
-      {!auth ? (
+      {!auth && !localStorage.getItem(BP_SESSION_KEY) ? (
         <LoginScreen onAuth={handleAuth}/>
+      ) : !auth ? (
+        /* Session found in localStorage — show spinner while DB loads */
+        <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh"}}>
+          <div style={{textAlign:"center",color:"rgba(255,255,255,.6)"}}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+              style={{animation:"bp-spin 1s linear infinite",display:"block",margin:"0 auto 12px"}}>
+              <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+            </svg>
+            <span style={{fontSize:13,letterSpacing:".06em"}}>Restoring your session…</span>
+          </div>
+        </div>
       ) : (
         <>
           <Header

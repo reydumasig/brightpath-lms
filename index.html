@@ -1954,16 +1954,6 @@ function LoginScreen({ onAuth }) {
                 </div>
               )}
 
-              <div className="bp-login-foot" style={{marginTop: 20}}>
-                <span/>
-                <button
-                  type="button"
-                  className="bp-link"
-                  onClick={() => onAuth({ email: "admin@brightpath-mn.com", name: "Site Administrator", picture: null, role: "admin" })}
-                >
-                  Use admin demo ↗
-                </button>
-              </div>
             </div>
           </FadeIn>
         </GlassCard>
@@ -4222,7 +4212,7 @@ function App() {
                         options={["learner","admin"]}
                         onChange={(v) => setTweak("role", v)}/>
             <p style={{fontSize:11, color:"rgba(41,38,27,.55)", margin:"6px 0 0"}}>
-              Swap roles without logging out. Admin uses <b>admin@brightpath-mn.com</b>.
+              Swap roles without logging out.
             </p>
           </>
         )}

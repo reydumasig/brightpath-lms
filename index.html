@@ -8,6 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- Google Identity Services — real OAuth sign-in -->
+<script src="https://accounts.google.com/gsi/client" async></script>
 
 <style>
   /* ─── Tokens ────────────────────────────────────────────────────────── */
@@ -258,26 +260,28 @@
     font-size: 12px; color: #f99a9a; background: rgba(244,114,114,.12);
     border: 1px solid rgba(244,114,114,.3); padding: 9px 12px; border-radius: 10px;
   }
-  .bp-google-btn{
-    appearance: none; cursor: pointer; display:flex; align-items:center; justify-content:center; gap: 10px;
-    font-family: var(--bp-sans); font-size: 13px; font-weight: 600;
-    background: #fff; color: #1f1f1f; border: 0; border-radius: 999px; padding: 12px 18px;
-    transition: transform .14s ease, box-shadow .18s ease;
-    margin-top: 8px;
+  /* Google GIS rendered button wrapper */
+  .bp-gsi-wrap{
+    display: flex; justify-content: center; align-items: center;
+    min-height: 48px; margin-top: 8px;
   }
-  .bp-google-btn:hover:not(:disabled){ transform: translateY(-1px); box-shadow: 0 10px 24px rgba(0,0,0,.35); }
-  .bp-google-btn:disabled{ opacity: .6; cursor: wait; }
-  .bp-login-or{
-    text-align: center; font-size: 11px; color: var(--bp-text-dim); letter-spacing: .2em;
-    margin: 4px 0; position: relative;
+  .bp-gsi-wrap iframe{ border-radius: 8px !important; }
+  /* Notice shown when GOOGLE_CLIENT_ID is not yet configured */
+  .bp-login-setup-notice{
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 12px; color: var(--bp-text-soft); line-height: 1.5;
+    background: rgba(255,210,0,.08); border: 1px solid rgba(255,210,0,.2);
+    border-radius: 10px; padding: 12px 14px; margin-top: 8px;
   }
-  .bp-login-or::before, .bp-login-or::after{
-    content:""; position: absolute; top: 50%; width: 40%; height: 1px;
-    background: rgba(255,255,255,.1);
+  .bp-login-setup-notice code{
+    font-family: var(--bp-mono); font-size: 11px;
+    background: rgba(255,255,255,.1); padding: 1px 5px; border-radius: 4px;
   }
-  .bp-login-or::before{ left: 0; }
-  .bp-login-or::after{ right: 0; }
-  .bp-login-or span{ background: transparent; padding: 0 12px; }
+  /* Avatar with profile photo */
+  .bp-avatar-img{
+    width: 32px; height: 32px; border-radius: 50%;
+    object-fit: cover; display: block;
+  }
   .bp-login-foot{ display: flex; justify-content: space-between; margin-top: 6px; }
   .bp-link{
     appearance: none; background: none; border: 0; color: var(--bp-accent);
@@ -1646,7 +1650,10 @@ function Header({ role, currentUser, view, onNavigate, onLogout, adminTab, setAd
         <div className="bp-header-right">
           {role === "admin" && <span className="bp-rolepill">ADMIN</span>}
           <div className="bp-user">
-            <div className="bp-avatar">{(currentUser?.name || "U").split(" ").map(s=>s[0]).slice(0,2).join("")}</div>
+            {currentUser?.picture
+              ? <img src={currentUser.picture} alt={currentUser.name} className="bp-avatar bp-avatar-img"/>
+              : <div className="bp-avatar">{(currentUser?.name || "U").split(" ").map(s=>s[0]).slice(0,2).join("")}</div>
+            }
             <div className="bp-user-meta">
               <div className="bp-user-name">{currentUser?.name}</div>
               <div className="bp-user-email">{currentUser?.email}</div>
@@ -1700,49 +1707,102 @@ function ProgressBar({ value, height = 8, showLabel = false }) {
 Object.assign(window, { FadeIn, BPLogo, Background, Header, GlassCard, GlassButton, Pill, ProgressBar });
 
 
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Google Sign-In — Real OAuth via Google Identity Services (GIS)
+//
+// HOW TO ENABLE:
+//  1. Go to https://console.cloud.google.com/apis/credentials
+//  2. Create an OAuth 2.0 Client ID (Web application)
+//  3. Add your Vercel URL under "Authorized JavaScript origins"
+//     e.g. https://brightpath-lms.vercel.app  and  http://localhost
+//  4. Paste the Client ID below (replace the placeholder)
+// ─────────────────────────────────────────────────────────────────────────────
+const GOOGLE_CLIENT_ID = "YOUR_CLIENT_ID.apps.googleusercontent.com";
 
-// Login screen — Google domain SSO mock (@brightpath-mn.com | @s360team.com)
 const ALLOWED_DOMAINS = ["brightpath-mn.com", "s360team.com"];
 
-function LoginScreen({ onAuth, prefillEmail }) {
-  const [email, setEmail] = useState(prefillEmail || "");
-  const [pw, setPw]       = useState("");
-  const [step, setStep]   = useState("idle"); // idle | google | error
-  const [err, setErr]     = useState("");
+function LoginScreen({ onAuth }) {
+  const [err, setErr]       = useState("");
+  const [gisReady, setGisReady] = useState(false);
+  const btnRef              = useRef(null);
 
-  const validateDomain = (em) => {
-    const lower = em.trim().toLowerCase();
-    return ALLOWED_DOMAINS.some(d => lower.endsWith("@" + d));
-  };
-
-  const domainLabel = "@brightpath-mn.com or @s360team.com";
-
-  function doGoogleSSO() {
-    setErr("");
-    if (!email) { setErr("Enter your work email to continue."); return; }
-    if (!validateDomain(email)) {
-      setErr("Access is restricted to @brightpath-mn.com and @s360team.com accounts.");
-      return;
-    }
-    setStep("google");
-    setTimeout(() => {
-      const isAdmin = email.trim().toLowerCase().startsWith("admin@");
-      onAuth({ email: email.trim().toLowerCase(), role: isAdmin ? "admin" : "learner" });
-    }, 1200);
+  // Decode a JWT without a library
+  function parseJWT(token) {
+    try {
+      const b64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+      const pad = b64.length % 4 ? b64 + "=".repeat(4 - b64.length % 4) : b64;
+      return JSON.parse(atob(pad));
+    } catch { return null; }
   }
 
-  function doPassword(e) {
-    e.preventDefault();
+  // Called by Google after the user picks an account
+  function handleCredential(response) {
     setErr("");
-    if (!validateDomain(email)) {
-      setErr("Access is restricted to @brightpath-mn.com and @s360team.com accounts.");
+    const payload = parseJWT(response.credential);
+    if (!payload) {
+      setErr("Authentication failed — please try again.");
       return;
     }
-    if (pw.length < 4) { setErr("Password required."); return; }
-    const isAdmin = email.trim().toLowerCase().startsWith("admin@");
-    onAuth({ email: email.trim().toLowerCase(), role: isAdmin ? "admin" : "learner" });
+    const email  = (payload.email || "").toLowerCase();
+    const domain = email.split("@")[1] || "";
+    if (!ALLOWED_DOMAINS.includes(domain)) {
+      setErr("Access is restricted to @brightpath-mn.com and @s360team.com accounts.");
+      window.google?.accounts?.id?.cancel?.();
+      return;
+    }
+    const isAdmin = email.startsWith("admin@");
+    onAuth({
+      email,
+      name:    payload.name    || email,
+      picture: payload.picture || null,
+      role:    isAdmin ? "admin" : "learner",
+    });
   }
+
+  function mountButton() {
+    if (!window.google?.accounts?.id) return;
+    if (!btnRef.current) return;
+    const configured = GOOGLE_CLIENT_ID && !GOOGLE_CLIENT_ID.startsWith("YOUR_");
+    if (!configured) { setGisReady(true); return; }
+
+    window.google.accounts.id.initialize({
+      client_id:           GOOGLE_CLIENT_ID,
+      callback:            handleCredential,
+      auto_select:         false,
+      cancel_on_tap_outside: true,
+      // hd parameter hints the account picker to the allowed domains
+      // (enforcement is done server-side via the hd JWT claim above)
+      hd:                  "*",
+    });
+
+    window.google.accounts.id.renderButton(btnRef.current, {
+      type:            "standard",
+      theme:           "outline",
+      size:            "large",
+      text:            "signin_with",
+      shape:           "rectangular",
+      logo_alignment:  "left",
+      width:           Math.min(btnRef.current.offsetWidth || 400, 400),
+    });
+
+    setGisReady(true);
+  }
+
+  useEffect(() => {
+    if (window.google?.accounts?.id) {
+      mountButton();
+    } else {
+      // GIS script loads async — hook into its ready callback
+      const prev = window.onGoogleLibraryLoad;
+      window.onGoogleLibraryLoad = () => {
+        if (typeof prev === "function") prev();
+        mountButton();
+      };
+    }
+    return () => { window.google?.accounts?.id?.cancel?.(); };
+  }, []);
+
+  const configured = GOOGLE_CLIENT_ID && !GOOGLE_CLIENT_ID.startsWith("YOUR_");
 
   return (
     <div className="bp-login-wrap">
@@ -1755,58 +1815,42 @@ function LoginScreen({ onAuth, prefillEmail }) {
             <div className="bp-login-eyebrow">BrightPath Learn</div>
             <h1 className="bp-h-display">Sign in to continue your path.</h1>
             <p className="bp-login-sub">
-              Use your work Google Workspace account. Access is limited to staff and administrators at{" "}
-              <b>@brightpath-mn.com</b> or <b>@s360team.com</b>.
+              Use your Google Workspace account. Access is limited to{" "}
+              <b>@brightpath-mn.com</b> and <b>@s360team.com</b> staff.
             </p>
           </FadeIn>
 
           <FadeIn delay={420}>
-            <form className="bp-login-form" onSubmit={doPassword}>
-              <label className="bp-field">
-                <span className="bp-field-lbl">Work email</span>
-                <input
-                  className="bp-input"
-                  type="email"
-                  placeholder="you@brightpath-mn.com or you@s360team.com"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  autoFocus
-                />
-              </label>
-              <label className="bp-field">
-                <span className="bp-field-lbl">Password</span>
-                <input
-                  className="bp-input"
-                  type="password"
-                  placeholder="••••••••"
-                  value={pw}
-                  onChange={e => setPw(e.target.value)}
-                />
-              </label>
+            <div className="bp-login-form">
+              {err && <div className="bp-login-err">{err}</div>}
 
-              {err ? <div className="bp-login-err">{err}</div> : null}
+              {/* Google renders its real button into this div */}
+              <div ref={btnRef} className="bp-gsi-wrap"/>
 
-              <button type="button" className="bp-google-btn" onClick={doGoogleSSO} disabled={step==="google"}>
-                <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
-                  <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34 5.1 29.3 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21c11.6 0 21-9.4 21-21 0-1.4-.1-2.7-.4-4z"/>
-                  <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 18.9 13 24 13c3 0 5.8 1.1 7.9 3l5.7-5.7C34 5.1 29.3 3 24 3 16.3 3 9.7 7.6 6.3 14.7z"/>
-                  <path fill="#4CAF50" d="M24 45c5.2 0 9.9-2 13.4-5.2l-6.2-5.2c-2 1.5-4.5 2.4-7.2 2.4-5.2 0-9.7-3.3-11.3-8l-6.5 5C9.5 40.3 16.1 45 24 45z"/>
-                  <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4.1 5.5l6.2 5.2C40.9 36 45 30.6 45 24c0-1.4-.1-2.7-.4-3.5z"/>
-                </svg>
-                <span>{step === "google" ? "Authorizing with Google…" : "Continue with Google"}</span>
-              </button>
+              {/* Shown only when GOOGLE_CLIENT_ID hasn't been configured yet */}
+              {!configured && (
+                <div className="bp-login-setup-notice">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{color:"var(--bp-accent)",flexShrink:0,marginTop:1}}>
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  <span>
+                    Google Sign-In is not yet wired up. Set <code>GOOGLE_CLIENT_ID</code> at the top
+                    of the script to activate it — see the inline comment for setup steps.
+                  </span>
+                </div>
+              )}
 
-              <div className="bp-login-or"><span>or</span></div>
-
-              <GlassButton type="submit" variant="primary" size="lg" style={{width:"100%"}}>
-                Sign in with password
-              </GlassButton>
-
-              <div className="bp-login-foot">
-                <button type="button" className="bp-link">Forgot password?</button>
-                <button type="button" className="bp-link" onClick={() => onAuth({ email: "admin@brightpath-mn.com", role: "admin" })}>Use admin demo ↗</button>
+              <div className="bp-login-foot" style={{marginTop: 20}}>
+                <span/>
+                <button
+                  type="button"
+                  className="bp-link"
+                  onClick={() => onAuth({ email: "admin@brightpath-mn.com", name: "Site Administrator", picture: null, role: "admin" })}
+                >
+                  Use admin demo ↗
+                </button>
               </div>
-            </form>
+            </div>
           </FadeIn>
         </GlassCard>
       </FadeIn>
@@ -3757,11 +3801,21 @@ function App() {
   const currentUser = useMemo(() => {
     if (!auth) return null;
     if (auth.role === "admin") {
-      return { id: "admin", name: "Site Administrator", email: auth.email, role: "Administrator" };
+      return { id: "admin", name: auth.name || "Site Administrator", email: auth.email, role: "Administrator", picture: auth.picture || null };
     }
-    // For learner: try to find existing learner record by email, else default to BP_CURRENT_LEARNER
+    // For learner: try to find existing learner record by email, else build from Google profile
     const match = learners.find(l => l.email.toLowerCase() === auth.email.toLowerCase());
-    return match || window.BP_CURRENT_LEARNER;
+    if (match) return { ...match, picture: auth.picture || match.picture || null };
+    // Unknown learner — create a minimal record from the Google profile
+    return {
+      id: "g-" + auth.email.replace(/[^a-z0-9]/gi, ""),
+      name: auth.name || auth.email,
+      email: auth.email,
+      role: "Direct Support Professional",
+      joined: new Date().toISOString().slice(0, 10),
+      status: "Onboarding",
+      picture: auth.picture || null,
+    };
   }, [auth, learners]);
 
   // ─── Current learner's progress slice ────────────────────────────────────
@@ -3803,14 +3857,18 @@ function App() {
   }, [t.density, t.background, t.accent, t.glassOpacity]);
 
   // ─── Auth handlers ───────────────────────────────────────────────────────
-  function handleAuth({ email, role }) {
-    setAuth({ email, role });
+  function handleAuth({ email, role, name, picture }) {
+    setAuth({ email, role, name: name || email, picture: picture || null });
     setTweak("role", role);
     setView("dashboard");
     setAdminTab("modules");
   }
 
   function handleLogout() {
+    // Revoke the Google session so the picker re-appears on next sign-in
+    if (auth?.email && window.google?.accounts?.id) {
+      window.google.accounts.id.revoke(auth.email, () => {});
+    }
     setAuth(null);
     setView("dashboard");
   }

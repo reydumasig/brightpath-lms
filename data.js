@@ -22,7 +22,7 @@ window.BP_MODULES = [
       ]},
       { type: "content", title: "The AI Imperative — We Are Here", body: "Agentic AI is no longer emerging — it is here. Organizations that embrace it now will serve their communities better, operate more efficiently, and attract stronger talent.\n\nBrightPath's commitment to person-centered, data-driven care makes us exactly the kind of organization that benefits most from AI tools. Claude helps us live our values at scale." },
       { type: "pillars", title: "What Claude brings to BrightPath", items: [
-        { k: "Tool Integrations", v: "Claude works inside the apps your team already uses — Teams, Outlook, Word, Excel, and more." },
+        { k: "Tool Integrations", v: "Claude works inside the apps your team already uses — Google Chat, Gmail, Google Docs, Google Sheets, and more." },
         { k: "Automations", v: "Repetitive tasks — recurring reports, routine messages, documentation drafts — handled automatically." },
         { k: "App-Building", v: "Build lightweight internal tools just by describing them — no developers needed." },
       ]},
@@ -86,7 +86,7 @@ window.BP_MODULES = [
         { k: "② Change chat model", v: "The model selector sits at the bottom of your message input — the 'Sonnet 4.6' button. We'll cover which to choose in Module 03." },
         { k: "③ Files & more", v: "The + button lets you attach documents, images, spreadsheets, or code. Drag-and-drop works too." },
         { k: "④ Chat ↔ Cowork", v: "Two very different modes at the top of the sidebar. Chat is for conversation; Cowork is for multi-step tasks. Module 10 dives deep." },
-        { k: "⑤ Connectors & skills", v: "Under Customize — this is where you link Claude to Teams, Outlook, Monday, and more (Modules 05 & 08)." },
+        { k: "⑤ Connectors & skills", v: "Under Customize — this is where you link Claude to Google Chat, Gmail, Monday, and more (Modules 05 & 08)." },
         { k: "⑥ Settings", v: "Click your account name in the bottom-left footer to access settings, usage, and preferences." },
       ]},
       { type: "steps", title: "Starting your first conversation — three things to do", items: [
@@ -213,32 +213,32 @@ window.BP_MODULES = [
   {
     id: "m04",
     code: "BP-201",
-    title: "Claude for Word, PPT, and Excel",
-    subtitle: "Side-by-side with Microsoft Office",
+    title: "Claude for Docs, Slides & Sheets",
+    subtitle: "Side-by-side with Google Workspace",
     duration: "20 min",
     category: "Apps & Extensions",
-    description: "Install the Claude extensions for Office and work on files directly inside Word, PowerPoint, and Excel.",
+    description: "Install the Claude extensions for Google Workspace and work on files directly inside Google Docs, Slides, and Sheets.",
     slides: [
-      { type: "cover", eyebrow: "Module 04 · Apps & Extensions", title: "Claude for Word, PPT & Excel", subtitle: "Stop copy-pasting. Work where the file already is.", body: "One of the most common frustrations I hear from teams is the back-and-forth: copy text from Word, paste into Claude, copy the response, paste it back. This module ends that. The Office extensions put Claude directly inside Word, PowerPoint, and Excel — so you work on the file, not around it." },
+      { type: "cover", eyebrow: "Module 04 · Apps & Extensions", title: "Claude for Docs, Slides & Sheets", subtitle: "Stop copy-pasting. Work where the file already is.", body: "One of the most common frustrations I hear from teams is the back-and-forth: copy text from Google Docs, paste into Claude, copy the response, paste it back. This module ends that. The Google Workspace extensions put Claude directly inside Google Docs, Slides, and Sheets — so you work on the file, not around it." },
       { type: "content", title: "Why this changes the game", body: "When Claude lives inside the file, two things happen that feel almost magical at first:\n\nFirst, you stop context-switching. Your document stays open; Claude stays open. You never have to copy-paste between windows again.\n\nSecond — and this is the part that surprises people — Claude can see what you have selected. If you highlight a paragraph and ask Claude to rewrite it, Claude knows exactly what you're talking about. No copying. No explaining. It just works.\n\nThis is how Claude should feel in your daily work: present, aware, and immediately useful." },
       { type: "steps", title: "Downloading the extensions", items: [
-        { h: "Find the extension", b: "Look in the Microsoft Office box on the downloads page." },
+        { h: "Find the extension", b: "Look in the Google Workspace section on the downloads page." },
         { h: "Install", b: "Hit install on the extension you'd like to add. The installer for that app opens." },
         { h: "Log in", b: "After installing, log in. If prompted for a verification code, check your inbox — it can take up to 5 minutes." },
       ]},
-      { type: "content", title: "Using the Extensions", body: "Find the Claude extension under the \"Home\" tab of the Office app.\n\nIn apps like PowerPoint, Claude can see what you have selected — which helps guide its actions.\n\nAsk Claude to help revise, add content, or pull data from your Connectors (Module 05)." },
+      { type: "content", title: "Using the Extensions", body: "Find the Claude extension from the Extensions menu inside Google Docs, Slides, or Sheets.\n\nIn apps like Google Slides, Claude can see what you have selected — which helps guide its actions.\n\nAsk Claude to help revise, add content, or pull data from your Connectors (Module 05)." },
       { type: "callout", title: "Power up with settings", body: "Some extensions have settings — configure additional instructions for Claude to follow. Treat these as your house style and Claude will match it every time." },
       { type: "outro", title: "Knowledge check next", body: "Five questions on the Office extensions." },
     ],
     quiz: [
-      { q: "Where do you find the Claude extension inside Word or PowerPoint after installing?", choices: [
-        "Under the \"View\" tab", "Under the \"Home\" tab", "It opens automatically as a popup", "In the Windows tray",
+      { q: "Where do you find the Claude extension inside Google Docs or Slides after installing?", choices: [
+        "Under the \"View\" tab", "From the Extensions menu", "It opens automatically as a popup", "In the Windows tray",
       ], answer: 1 },
       { q: "Why use extensions instead of the Claude app?", choices: [
         "They're cheaper.",
-        "They let you work side-by-side on a file in Word/PPT/Excel without bouncing through the Claude app.",
+        "They let you work side-by-side on a file in Google Docs/Slides/Sheets without bouncing through the Claude app.",
         "They're required for all tasks.",
-        "They replace your Office license.",
+        "They replace your Google Workspace license.",
       ], answer: 1 },
       { q: "Scenario — You install the extension and it asks for a verification code. You should:", choices: [
         "Reinstall.",
@@ -246,7 +246,7 @@ window.BP_MODULES = [
         "Skip the step.",
         "Use a coworker's code.",
       ], answer: 1 },
-      { q: "In PowerPoint, what helps Claude give relevant actions?", choices: [
+      { q: "In Google Slides, what helps Claude give relevant actions?", choices: [
         "Closing all other windows",
         "Knowing what you have selected on the slide",
         "Disabling Connectors",
@@ -269,13 +269,13 @@ window.BP_MODULES = [
     subtitle: "Linking Claude to the tools you already use",
     duration: "25 min",
     category: "Apps & Extensions",
-    description: "Enable Connectors to let Claude pull info, send messages, or take actions in tools like Teams, Outlook, and Monday.com.",
+    description: "Enable Connectors to let Claude pull info, send messages, or take actions in tools like Google Chat, Gmail, and Monday.com.",
     slides: [
-      { type: "cover", eyebrow: "Module 05 · Apps & Extensions", title: "Claude Connectors", subtitle: "One conversation. Every tool you use.", body: "What if you could ask Claude: 'What tasks do I have due in Monday this week, and are there any related emails in Outlook I should respond to?' — and get a real answer, instantly?\n\nThat's exactly what Connectors make possible. In this module, I'll show you which connectors are available, how to enable them in under two minutes, and how to start using them today." },
-      { type: "content", title: "What Connectors actually do — and why they matter", body: "Most AI tools sit in isolation. You give them text; they give you text back. Connectors break that wall.\n\nWith Connectors enabled, Claude can reach into your tools and pull real information:\n\n• 'Summarize my unread emails from today' — Claude reads your Outlook inbox.\n• 'What's on my Monday board for the Henderson project?' — Claude queries your Monday workspace.\n• 'Find the Brand Guidelines doc in SharePoint' — Claude searches your SharePoint.\n\nThink of it as giving Claude real eyes and hands in the tools where your work actually lives. This is where AI stops being a writing assistant and starts being a genuine work partner." },
+      { type: "cover", eyebrow: "Module 05 · Apps & Extensions", title: "Claude Connectors", subtitle: "One conversation. Every tool you use.", body: "What if you could ask Claude: 'What tasks do I have due in Monday this week, and are there any related emails in Gmail I should respond to?' — and get a real answer, instantly?\n\nThat's exactly what Connectors make possible. In this module, I'll show you which connectors are available, how to enable them in under two minutes, and how to start using them today." },
+      { type: "content", title: "What Connectors actually do — and why they matter", body: "Most AI tools sit in isolation. You give them text; they give you text back. Connectors break that wall.\n\nWith Connectors enabled, Claude can reach into your tools and pull real information:\n\n• 'Summarize my unread emails from today' — Claude reads your Gmail inbox.\n• 'What's on my Monday board for the Henderson project?' — Claude queries your Monday workspace.\n• 'Find the Brand Guidelines doc in Google Drive' — Claude searches your Google Drive.\n\nThink of it as giving Claude real eyes and hands in the tools where your work actually lives. This is where AI stops being a writing assistant and starts being a genuine work partner." },
       { type: "twocol", title: "Currently Available Connectors",
         left: { h: "All Team Members", items: [
-          "Microsoft 365", "Microsoft Learn", "Canva", "Monday.com",
+          "Google Workspace", "Canva", "Monday.com",
           "tldraw", "Claude in Chrome", "Mermaid Chart",
         ]},
         right: { h: "Leadership (Additional)", items: [
@@ -295,7 +295,7 @@ window.BP_MODULES = [
       { type: "list", title: "Try asking", items: [
         "\"Start a Monday board in [workspace] to track an upcoming project.\"",
         "\"What's on my calendar this week?\"",
-        "\"Find the SharePoint doc on Brand Guidelines.\"",
+        "\"Find the Google Drive doc on Brand Guidelines.\"",
         "Claude will let you know if it needs permission or if a connector isn't active.",
       ]},
       { type: "outro", title: "Knowledge check next", body: "Five questions on Connectors." },
@@ -303,7 +303,7 @@ window.BP_MODULES = [
     quiz: [
       { q: "What do Connectors let Claude do?", choices: [
         "Generate images only",
-        "Link to tools like Teams, Outlook, Monday — pull info or take actions from one chat window",
+        "Link to tools like Google Chat, Gmail, Monday — pull info or take actions from one chat window",
         "Run a separate desktop app",
         "Replace your password manager",
       ], answer: 1 },
@@ -314,7 +314,7 @@ window.BP_MODULES = [
         "Switch to a different model.",
       ], answer: 1 },
       { q: "Which connector is restricted to Leadership?", choices: [
-        "Microsoft 365", "Canva", "HubSpot", "tldraw",
+        "Google Workspace", "Canva", "HubSpot", "tldraw",
       ], answer: 2 },
       { q: "How do you invoke a connector once it's enabled?", choices: [
         "Type a special hex code.",
@@ -358,7 +358,7 @@ window.BP_MODULES = [
         "Email", "Slide decks and prototypes", "Spreadsheets", "Video editing",
       ], answer: 1 },
       { q: "Which design system should you select for BrightPath-branded decks?", choices: [
-        "Generic Slides", "BrightPath Design System", "Default", "Microsoft Office",
+        "Generic Slides", "BrightPath Design System", "Default", "Google Workspace",
       ], answer: 1 },
       { q: "Scenario — You need a 2-word typo fixed on a slide. Best move:", choices: [
         "Prompt Claude to rewrite the deck.",
@@ -375,7 +375,7 @@ window.BP_MODULES = [
       { q: "Where do you log in to Claude Design?", choices: [
         "A separate account",
         "Your same Claude account",
-        "Microsoft 365 only",
+        "Google Workspace only",
         "Anonymous access",
       ], answer: 1 },
     ],
@@ -412,7 +412,7 @@ window.BP_MODULES = [
         "Batch related questions — combine asks into one message.",
         "Be specific upfront — clear instructions reduce back-and-forth.",
       ]},
-      { type: "callout", title: "Need more?", body: "Requesting extra usage goes through Lane and is reviewed case-by-case. Approval isn't guaranteed — use the tips first. The admin team is adding org-wide settings to help Claude use less by default." },
+      { type: "callout", title: "Need more?", body: "Requesting extra usage goes through Brandon and is reviewed case-by-case. Approval isn't guaranteed — use the tips first. The admin team is adding org-wide settings to help Claude use less by default." },
       { type: "outro", title: "Knowledge check next", body: "Five questions on usage." },
     ],
     quiz: [
@@ -454,7 +454,7 @@ window.BP_MODULES = [
     description: "Skills guide Claude through specific tasks step-by-step. Discover available skills and how to request new ones.",
     slides: [
       { type: "cover", eyebrow: "Module 08 · Advanced", title: "Claude Skills", subtitle: "Expert playbooks — built for exactly how BrightPath works.", body: "By now you know Claude is powerful. Skills make it specific.\n\nWithout a Skill, Claude gives you a capable general answer. With a Skill, Claude follows a proven step-by-step process built for your team's tools, formats, and workflows.\n\nIn this module I'll show you every Skill available to you today, how to invoke them, and what the process looks like to request a new one." },
-      { type: "content", title: "What makes a Skill different from a regular prompt?", body: "Imagine you hired the best SOW writer in the business and asked them to document exactly how they work — every question they ask, every format they follow, every quality check they run. Then you gave that process to Claude.\n\nThat's a Skill.\n\nWhen you invoke a Skill, Claude doesn't guess. It follows a specific, tested workflow our team designed for exactly that job. It asks the right clarifying questions. It connects to the right tools (SharePoint, Monday, Outlook) automatically. It produces output in the format we actually use.\n\nThe difference shows immediately. Compare asking Claude to 'write me a Statement of Work' versus invoking /draft-sow. The Skill version is in a different league." },
+      { type: "content", title: "What makes a Skill different from a regular prompt?", body: "Imagine you hired the best SOW writer in the business and asked them to document exactly how they work — every question they ask, every format they follow, every quality check they run. Then you gave that process to Claude.\n\nThat's a Skill.\n\nWhen you invoke a Skill, Claude doesn't guess. It follows a specific, tested workflow our team designed for exactly that job. It asks the right clarifying questions. It connects to the right tools (Google Drive, Monday, Gmail) automatically. It produces output in the format we actually use.\n\nThe difference shows immediately. Compare asking Claude to 'write me a Statement of Work' versus invoking /draft-sow. The Skill version is in a different league." },
       { type: "twocol", title: "How to use a skill",
         left: { h: "Option 1 — Claude picks", items: [
           "Just describe your task naturally.",
@@ -472,7 +472,7 @@ window.BP_MODULES = [
         "Claude Artifact Creator (/brightpath-artifact-creator) — interactive web components with the BrightPath look.",
         "Process Diagram Creator (/diagram-creator) — workflow diagrams from your description.",
         "Monday Board Maker (/monday-board) — sets up Monday.com boards from project requirements.",
-        "To-Do List (/to-do-list) — scans Outlook, Monday, Teams and arranges tasks by calendar.",
+        "To-Do List (/to-do-list) — scans Gmail, Monday, Google Chat and arranges tasks by calendar.",
       ]},
       { type: "list", title: "Tips for getting the most out of skills", items: [
         "Be specific — the more detail, the better the output.",
@@ -525,7 +525,7 @@ window.BP_MODULES = [
     subtitle: "Where to put files — and where not to",
     duration: "15 min",
     category: "Advanced",
-    description: "File storage best practices, OneDrive sync warnings, and how to work with cloud files safely.",
+    description: "File storage best practices, Google Drive sync warnings, and how to work with cloud files safely.",
     slides: [
       { type: "cover", eyebrow: "Module 09 · Advanced", title: "Navigating and Using Files in Claude", subtitle: "A small habit that prevents big headaches.", body: "File management with AI sounds simple until something goes wrong — a document saves in the wrong place, Claude can't find the file you meant, or you accidentally share more than you intended.\n\nThis module is short but important. The habits I'm going to teach you take five minutes to set up and will save you significant frustration down the road. Please don't skip this one." },
       { type: "twocol", title: "File Storage Best Practices",
@@ -538,8 +538,8 @@ window.BP_MODULES = [
           "Limit files and subfolders within the space Claude can see.",
         ]},
       },
-      { type: "callout", title: "OneDrive warning", body: "Sometimes our devices sync folders like \"Desktop\" or \"Documents\" with OneDrive. To avoid files saving improperly, don't work with Claude in these synced folders." },
-      { type: "content", title: "Working on Cloud Files", body: "Documents in SharePoint, OneDrive, or Teams live on the Microsoft Cloud.\n\nTwo best options to work on them:\n\n1. Download the file to a local folder, point Claude there, then re-upload when done.\n2. Hit \"Open in Desktop,\" then use the Claude extension (see Module 04). The file stays in the cloud.\n\nSimilar in Excel and Word." },
+      { type: "callout", title: "Google Drive sync warning", body: "Sometimes our devices sync folders like \"Desktop\" or \"Documents\" with Google Drive. To avoid files saving improperly, don't work with Claude in these synced folders." },
+      { type: "content", title: "Working on Cloud Files", body: "Documents in Google Drive or Shared Drives live on Google Cloud.\n\nTwo best options to work on them:\n\n1. Download the file to a local folder, point Claude there, then re-upload when done.\n2. Hit \"Open in Desktop,\" then use the Claude extension (see Module 04). The file stays in the cloud.\n\nSimilar in Google Sheets and Google Docs." },
       { type: "outro", title: "Knowledge check next", body: "Five questions on file storage." },
     ],
     quiz: [
@@ -549,17 +549,17 @@ window.BP_MODULES = [
         "Your Downloads folder.",
         "A shared network drive.",
       ], answer: 1 },
-      { q: "Why avoid working with Claude inside OneDrive-synced folders?", choices: [
+      { q: "Why avoid working with Claude inside Google Drive-synced folders?", choices: [
         "It's faster.",
         "Files may save improperly due to cloud sync.",
-        "OneDrive is offline.",
-        "Claude can't read OneDrive.",
+        "Google Drive is offline.",
+        "Claude can't read Google Drive.",
       ], answer: 1 },
-      { q: "Scenario — You need to edit a SharePoint document with Claude. Best approach:", choices: [
+      { q: "Scenario — You need to edit a Google Drive document with Claude. Best approach:", choices: [
         "Copy text manually.",
-        "Download locally, point Claude there, re-upload — OR \"Open in Desktop\" and use the Office extension.",
+        "Download locally, point Claude there, re-upload — OR \"Open in Desktop\" and use the Google Workspace extension.",
         "Forward the file by email.",
-        "Wait for Microsoft to send it.",
+        "Wait for Google to send it.",
       ], answer: 1 },
       { q: "If you use \"Open in Desktop\" + Claude extension, where does the file live?", choices: [
         "Locally only", "It stays in the cloud", "It's deleted", "On a USB stick",
@@ -626,7 +626,7 @@ window.BP_MODULES = [
       { q: "What must stay open for scheduled Cowork tasks to run?", choices: [
         "Your browser only",
         "Your computer AND Claude Desktop",
-        "Outlook",
+        "Gmail",
         "Nothing — they run in the cloud",
       ], answer: 1 },
       { q: "Scenario — You want Claude to compile a weekly report from a folder of files. Best mode:", choices: [
@@ -748,11 +748,11 @@ window.BP_FAQS = [
   { cat: "About Claude", q: "How do I write better prompts?",
     a: "Module 03 teaches the four principles of great prompts, how to give context, and the power move of asking Claude to clarify before it starts.",
     moduleId: "m03" },
-  { cat: "About Claude", q: "Can Claude work inside Word, PowerPoint, and Excel?",
-    a: "Yes — Claude has downloadable Office extensions. Module 04 shows how to install them and use Claude side-by-side with your files.",
+  { cat: "About Claude", q: "Can Claude work inside Google Docs, Slides, and Sheets?",
+    a: "Yes — Claude has downloadable Google Workspace extensions. Module 04 shows how to install them and use Claude side-by-side with your files.",
     moduleId: "m04" },
   { cat: "About Claude", q: "What are Connectors and how do I enable them?",
-    a: "Connectors link Claude to tools like Teams, Outlook, Monday.com, and SharePoint. Module 05 covers enabling, configuring, and using them.",
+    a: "Connectors link Claude to tools like Google Chat, Gmail, Monday.com, and Google Drive. Module 05 covers enabling, configuring, and using them.",
     moduleId: "m05" },
   { cat: "About Claude", q: "What is Claude Design and when should I use it?",
     a: "Claude Design is a web tool for building slide decks with the BrightPath Design System. Module 06 covers getting started and working with it.",
@@ -764,7 +764,7 @@ window.BP_FAQS = [
     a: "Skills are pre-built playbooks for specific tasks. Module 08 lists all available skills (SOW Writer, PPT Creator, etc.) and how to invoke them.",
     moduleId: "m08" },
   { cat: "About Claude", q: "Where should I store files I want Claude to work with?",
-    a: "Module 09 covers safe file storage — use a dedicated folder, avoid OneDrive-synced directories, and how to handle SharePoint files.",
+    a: "Module 09 covers safe file storage — use a dedicated folder, avoid Google Drive-synced directories, and how to handle Google Drive files.",
     moduleId: "m09" },
   { cat: "About Claude", q: "What is Cowork and when should I use it instead of Chat?",
     a: "Cowork handles multi-step tasks with local files — like compiling a weekly report. Module 10 explains when Chat vs Cowork is the right choice.",

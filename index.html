@@ -3253,7 +3253,7 @@ function AdminLearners({ learners, setLearners, progressByLearner, setProgressBy
             </thead>
             <tbody>
               {filtered.map(l => {
-                const enrollments = Object.keys(progressByLearner[l.id] || {}).length;
+                const enrollments = Object.keys(progressByLearner[l.email] || progressByLearner[l.id] || {}).length;
                 return (
                   <tr key={l.id}>
                     <td>
@@ -3359,7 +3359,7 @@ function AdminProgress({ learners, modules, progressByLearner }) {
     return learners.filter(l =>
       (l.name + l.email + l.role).toLowerCase().includes(filter.toLowerCase())
     ).map(l => {
-      const userP = progressByLearner[l.id] || {};
+      const userP = progressByLearner[l.email] || progressByLearner[l.id] || {};
       const total = modules.length;
       const completed = modules.filter(m => userP[m.id]?.status === "completed").length;
       const inProgress = modules.filter(m => userP[m.id]?.status === "in-progress").length;
@@ -3374,7 +3374,7 @@ function AdminProgress({ learners, modules, progressByLearner }) {
   const totals = useMemo(() => {
     let cs = 0, ps = 0, ns = 0;
     learners.forEach(l => {
-      const userP = progressByLearner[l.id] || {};
+      const userP = progressByLearner[l.email] || progressByLearner[l.id] || {};
       modules.forEach(m => {
         const s = userP[m.id]?.status;
         if (s === "completed") cs++;
@@ -3467,7 +3467,7 @@ function AdminCertificates({ learners, modules, progressByLearner }) {
   const certs = useMemo(() => {
     const out = [];
     learners.forEach(l => {
-      const userP = progressByLearner[l.id] || {};
+      const userP = progressByLearner[l.email] || progressByLearner[l.id] || {};
       modules.forEach(m => {
         const p = userP[m.id];
         if (p?.status === "completed") {

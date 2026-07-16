@@ -1725,7 +1725,7 @@ function Background({ variant = "photo", showPhoto = true }) {
 }
 
 // ─── Header / top nav ──────────────────────────────────────────────────────
-function Header({ role, currentUser, view, onNavigate, onLogout, adminTab, setAdminTab }) {
+function Header({ role, currentUser, view, onNavigate, onLogout, adminTab, setAdminTab, adminMode, setAdminMode }) {
   const learnerLinks = [
     { id: "dashboard", label: "Dashboard" },
     { id: "modules",   label: "All Modules" },
@@ -1739,13 +1739,14 @@ function Header({ role, currentUser, view, onNavigate, onLogout, adminTab, setAd
     { id: "certificates", label: "Certificates" },
     { id: "faq",          label: "FAQ" },
   ];
-  const links = role === "admin" ? adminLinks : learnerLinks;
-  const active = role === "admin" ? adminTab : (view === "module" || view === "quiz" || view === "certificate" ? "dashboard" : view);
+  const isAdminView = role === "admin" && adminMode !== "learner";
+  const links = isAdminView ? adminLinks : learnerLinks;
+  const active = isAdminView ? adminTab : (view === "module" || view === "quiz" || view === "certificate" ? "dashboard" : view);
 
   return (
     <header className="bp-header">
       <div className="bp-header-inner">
-        <button className="bp-logobtn" onClick={() => role === "admin" ? setAdminTab("modules") : onNavigate({ view: "dashboard" })}>
+        <button className="bp-logobtn" onClick={() => isAdminView ? setAdminTab("modules") : onNavigate({ view: "dashboard" })}>
           <BPLogo size={34} />
         </button>
         <nav className="bp-nav">
@@ -1753,7 +1754,7 @@ function Header({ role, currentUser, view, onNavigate, onLogout, adminTab, setAd
             <button key={l.id}
               className={"bp-navlink " + (active === l.id ? "is-active" : "")}
               onClick={() => {
-                if (role === "admin") setAdminTab(l.id);
+                if (isAdminView) setAdminTab(l.id);
                 else onNavigate({ view: l.id });
               }}>
               {l.label}
@@ -1761,7 +1762,21 @@ function Header({ role, currentUser, view, onNavigate, onLogout, adminTab, setAd
           ))}
         </nav>
         <div className="bp-header-right">
-          {role === "admin" && <span className="bp-rolepill">ADMIN</span>}
+          {role === "admin" && (
+            <button
+              className="bp-btn bp-btn-sm bp-btn-ghost"
+              style={{fontSize:11,padding:"6px 14px",letterSpacing:".06em"}}
+              onClick={() => {
+                setAdminMode(adminMode === "learner" ? "admin" : "learner");
+                if (adminMode === "learner") setAdminTab("modules");
+                else onNavigate({ view: "dashboard" });
+              }}
+              title={adminMode === "learner" ? "Switch to Admin Dashboard" : "Switch to My Learning"}
+            >
+              {adminMode === "learner" ? "⬅ Admin" : "My Learning"}
+            </button>
+          )}
+          {role === "admin" && adminMode !== "learner" && <span className="bp-rolepill">ADMIN</span>}
           <div className="bp-user">
             {currentUser?.picture
               ? <img src={currentUser.picture} alt={currentUser.name} className="bp-avatar bp-avatar-img"/>
@@ -3943,6 +3958,7 @@ function App() {
   const [view, setView]               = useState("dashboard");
   const [currentModuleId, setCurrentModuleId] = useState(null);
   const [adminTab, setAdminTab]       = useState("modules");
+  const [adminMode, setAdminMode]     = useState("admin"); // "admin" | "learner"
 
   // ─── Current user resolution ─────────────────────────────────────────────
   const currentUser = useMemo(() => {
@@ -4098,10 +4114,12 @@ function App() {
             setAdminTab={(t) => { setAdminTab(t); }}
             onNavigate={({ view }) => setView(view)}
             onLogout={handleLogout}
+            adminMode={adminMode}
+            setAdminMode={setAdminMode}
           />
 
           <main className="bp-main">
-            {auth.role === "learner" && view === "dashboard" && (
+            {(auth.role === "learner" || (auth.role === "admin" && adminMode === "learner")) && view === "dashboard" && (
               <LearnerDashboard
                 currentUser={currentUser}
                 progress={myProgress}
@@ -4114,7 +4132,7 @@ function App() {
               />
             )}
 
-            {auth.role === "learner" && view === "modules" && (
+            {(auth.role === "learner" || (auth.role === "admin" && adminMode === "learner")) && view === "modules" && (
               <AllModulesView
                 progress={myProgress}
                 onOpenModule={(id) => {
@@ -4124,16 +4142,16 @@ function App() {
               />
             )}
 
-            {auth.role === "learner" && view === "certificates" && (
+            {(auth.role === "learner" || (auth.role === "admin" && adminMode === "learner")) && view === "certificates" && (
               <MyCertificatesView
                 progress={myProgress}
                 onOpenCertificate={(id) => { setCurrentModuleId(id); setView("certificate"); }}
               />
             )}
 
-            {auth.role === "learner" && view === "faq" && <FAQScreen progress={myProgress} role="learner"/>}
+            {(auth.role === "learner" || (auth.role === "admin" && adminMode === "learner")) && view === "faq" && <FAQScreen progress={myProgress} role="learner"/>}
 
-            {auth.role === "learner" && view === "module" && currentModuleId && (
+            {(auth.role === "learner" || (auth.role === "admin" && adminMode === "learner")) && view === "module" && currentModuleId && (
               <ModuleDeck
                 moduleId={currentModuleId}
                 progress={myProgress[currentModuleId] || {}}
@@ -4143,7 +4161,7 @@ function App() {
               />
             )}
 
-            {auth.role === "learner" && view === "quiz" && currentModuleId && (
+            {(auth.role === "learner" || (auth.role === "admin" && adminMode === "learner")) && view === "quiz" && currentModuleId && (
               <QuizScreen
                 moduleId={currentModuleId}
                 passingScore={80}
@@ -4165,7 +4183,7 @@ function App() {
               />
             )}
 
-            {auth.role === "learner" && view === "certificate" && currentModuleId && (
+            {(auth.role === "learner" || (auth.role === "admin" && adminMode === "learner")) && view === "certificate" && currentModuleId && (
               <CertificateScreen
                 moduleId={currentModuleId}
                 currentUser={currentUser}
@@ -4175,8 +4193,8 @@ function App() {
               />
             )}
 
-            {auth.role === "admin" && adminTab === "faq" && <FAQScreen progress={{}} role="admin"/>}
-            {auth.role === "admin" && adminTab !== "faq" && (
+            {auth.role === "admin" && adminMode === "admin" && adminTab === "faq" && <FAQScreen progress={{}} role="admin"/>}
+            {auth.role === "admin" && adminMode === "admin" && adminTab !== "faq" && (
               <AdminScreen
                 tab={adminTab}
                 modules={modules} setModules={setModules}

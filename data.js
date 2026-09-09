@@ -918,56 +918,11 @@ window.BP_FAQS = [
 ];
 
 // ─── Learners ──────────────────────────────────────────────────────────────
-window.BP_LEARNERS = [
-  { id: "u1", name: "Amara Okafor",     email: "amara.okafor@brightpath-mn.com",   role: "Direct Support Professional", joined: "2026-01-12", status: "Active" },
-  { id: "u2", name: "Jordan Reyes",     email: "jordan.reyes@brightpath-mn.com",   role: "Case Manager",                joined: "2025-09-03", status: "Active" },
-  { id: "u3", name: "Priya Shah",       email: "priya.shah@brightpath-mn.com",     role: "Direct Support Professional", joined: "2026-02-21", status: "Active" },
-  { id: "u4", name: "Marcus Whitfield", email: "marcus.whitfield@brightpath-mn.com", role: "Program Lead",              joined: "2024-11-15", status: "Active" },
-  { id: "u5", name: "Ana Sørensen",     email: "ana.sorensen@brightpath-mn.com",   role: "Direct Support Professional", joined: "2026-03-08", status: "Active" },
-  { id: "u6", name: "Devin Park",       email: "devin.park@brightpath-mn.com",     role: "Direct Support Professional", joined: "2026-04-19", status: "Onboarding" },
-  { id: "u7", name: "Rosa Mendoza",     email: "rosa.mendoza@brightpath-mn.com",   role: "Trainer",                     joined: "2024-06-02", status: "Active" },
-  { id: "u8", name: "Hassan Yusuf",     email: "hassan.yusuf@brightpath-mn.com",   role: "Direct Support Professional", joined: "2026-05-01", status: "Onboarding" },
-];
+window.BP_LEARNERS = [];
 
-// Pre-seeded progress — kept consistent with sequential locking
-window.BP_SEED_PROGRESS = {
-  u1: { m01: { percent:100, status:"completed", score:100, completedOn:"2026-01-20" },
-        m02: { percent:100, status:"completed", score:90,  completedOn:"2026-02-04" },
-        m03: { percent:100, status:"completed", score:100, completedOn:"2026-02-18" },
-        m04: { percent:60,  status:"in-progress" } },
-  u2: { m01: { percent:100, status:"completed", score:100, completedOn:"2025-09-08" },
-        m02: { percent:100, status:"completed", score:100, completedOn:"2025-09-22" },
-        m03: { percent:100, status:"completed", score:80,  completedOn:"2025-10-06" },
-        m04: { percent:100, status:"completed", score:90,  completedOn:"2025-10-20" },
-        m05: { percent:100, status:"completed", score:100, completedOn:"2025-11-12" },
-        m06: { percent:80,  status:"in-progress" } },
-  u3: { m01: { percent:100, status:"completed", score:80,  completedOn:"2026-03-01" },
-        m02: { percent:40,  status:"in-progress" } },
-  u4: { m01: { percent:100, status:"completed", score:100, completedOn:"2024-11-22" },
-        m02: { percent:100, status:"completed", score:100, completedOn:"2024-12-08" },
-        m03: { percent:100, status:"completed", score:100, completedOn:"2025-01-14" },
-        m04: { percent:100, status:"completed", score:100, completedOn:"2025-02-01" },
-        m05: { percent:100, status:"completed", score:90,  completedOn:"2025-02-18" },
-        m06: { percent:100, status:"completed", score:100, completedOn:"2025-03-05" },
-        m07: { percent:100, status:"completed", score:90,  completedOn:"2025-04-12" },
-        m08: { percent:100, status:"completed", score:100, completedOn:"2025-05-09" },
-        m09: { percent:100, status:"completed", score:100, completedOn:"2025-06-01" },
-        m10: { percent:100, status:"completed", score:100, completedOn:"2025-06-22" },
-        m11: { percent:100, status:"completed", score:100, completedOn:"2025-07-15" } },
-  u5: { m01: { percent:100, status:"completed", score:100, completedOn:"2026-03-14" },
-        m02: { percent:100, status:"completed", score:80,  completedOn:"2026-04-02" },
-        m03: { percent:20,  status:"in-progress" } },
-  u6: { m01: { percent:25,  status:"in-progress" } },
-  u7: { m01: { percent:100, status:"completed", score:100, completedOn:"2024-06-15" },
-        m02: { percent:100, status:"completed", score:100, completedOn:"2024-07-01" },
-        m03: { percent:100, status:"completed", score:100, completedOn:"2024-07-22" },
-        m04: { percent:100, status:"completed", score:100, completedOn:"2024-08-14" },
-        m05: { percent:100, status:"completed", score:100, completedOn:"2024-09-03" },
-        m06: { percent:100, status:"completed", score:100, completedOn:"2024-09-25" } },
-  u8: { m01: { percent:0,   status:"not-started" } },
-};
+window.BP_SEED_PROGRESS = {};
 
-window.BP_CURRENT_LEARNER = window.BP_LEARNERS[0]; // Amara
+window.BP_CURRENT_LEARNER = null;
 
 // ─── Helper: is a module unlocked for this user? ───────────────────────────
 window.BP_isUnlocked = function(moduleId, progress) {

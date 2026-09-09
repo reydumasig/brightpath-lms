@@ -3945,9 +3945,24 @@ function App() {
       });
       // Admin: also pull all learners + all progress from DB
       if (session.role === "admin") {
-        BPBackend.fetchAllLearners().then(rows => { if (rows.length) setLearners(rows); });
-        BPBackend.fetchAllProgress().then(allProg => {
-          if (Object.keys(allProg).length) setProgressByLearner(prev => ({ ...prev, ...allProg }));
+        Promise.all([
+          BPBackend.fetchAllLearners(),
+          BPBackend.fetchAllProgress(),
+        ]).then(([rows, allProg]) => {
+          const known = new Set(rows.map(r => r.email));
+          const synthetic = Object.keys(allProg)
+            .filter(e => !known.has(e))
+            .map(e => ({
+              id: "db-" + e.replace(/[^a-z0-9]/gi, ""),
+              email: e,
+              name: e.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
+              role: "learner",
+              job_title: "Direct Support Professional",
+              status: "Onboarding",
+              joined: "",
+            }));
+          setLearners([...rows, ...synthetic]);
+          setProgressByLearner(prev => ({ ...prev, ...allProg }));
         });
       }
     } catch(e) { localStorage.removeItem(BP_SESSION_KEY); setDbReady(true); }
@@ -4056,9 +4071,25 @@ function App() {
       });
 
     if (role === "admin") {
-      BPBackend.fetchAllLearners().then(rows => { if (rows.length) setLearners(rows); });
-      BPBackend.fetchAllProgress().then(allProg => {
-        if (Object.keys(allProg).length) setProgressByLearner(prev => ({ ...prev, ...allProg }));
+      Promise.all([
+        BPBackend.fetchAllLearners(),
+        BPBackend.fetchAllProgress(),
+      ]).then(([rows, allProg]) => {
+        // Build a synthetic learner entry for any email that has progress but no profile row
+        const known = new Set(rows.map(r => r.email));
+        const synthetic = Object.keys(allProg)
+          .filter(e => !known.has(e))
+          .map(e => ({
+            id: "db-" + e.replace(/[^a-z0-9]/gi, ""),
+            email: e,
+            name: e.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
+            role: "learner",
+            job_title: "Direct Support Professional",
+            status: "Onboarding",
+            joined: "",
+          }));
+        setLearners([...rows, ...synthetic]);
+        setProgressByLearner(prev => ({ ...prev, ...allProg }));
       });
     }
   }

@@ -892,6 +892,29 @@ window.BP_FAQS = [
   { cat: "Admin", q: "Can admins add or modify courses?",
     a: "Yes. The Admin → Modules tab lets administrators add, edit, and delete modules and curriculum.",
     moduleId: null },
+
+  // Compliance & PHI
+  { cat: "Compliance & PHI", q: "Can I put client information (PHI) into Claude?",
+    a: "Only in the covered surface, and only what's actually needed. BrightPath's Primary Owner has signed Anthropic's Business Associate Agreement (BAA) and enabled HIPAA-ready configuration on our Claude Enterprise org:\n\n✅ Standard Claude.ai Chat (the normal chat window, Projects, Artifacts) — covered under our BAA.\n❌ Claude Cowork — NOT covered, under any configuration, no exceptions. Never put client-identifying or health information into Cowork. Treat it as a public tool: general admin drafting, non-client scheduling logistics, internal templates — nothing tied to a specific client.\n⚠️ Connectors, Claude in Chrome, web search, and any third-party integration — can be partially excluded even inside a covered org (e.g., anything routed to an outside tool, like a web search query, isn't protected the same way). Don't use these with PHI unless [Compliance/Privacy Officer name] has explicitly confirmed a specific integration is safe. Assume \"no\" until told otherwise.\n❌ Claude Code / Console / Workbench — not covered for our org's configuration. Don't paste client data into any developer-facing tool.\n\nIf you're not 100% sure which surface you're in, don't paste client information. Ask first.",
+    moduleId: null },
+  { cat: "Compliance & PHI", q: "What counts as \"PHI\" here — isn't it just name and diagnosis?",
+    a: "It's broader than most people think. At a DHS-regulated residential/unit-based provider, PHI/PII includes:\n\n• Client names, DOB, SSN, Medicaid/insurance IDs\n• Diagnoses, medications, behavior support plans, incident reports, ISPs\n• Photos, video, or audio of clients\n• Anything that could re-identify a client even without a name — e.g., \"our nonverbal client in the Anytown group home who had a seizure last week\" is identifying. Combining a few details (location + condition + date + program) can re-identify someone just as effectively as using their name.\n\nRule of thumb: if a stranger reading it could figure out who the client is, or if it relates to their health or services, it's protected — full stop.",
+    moduleId: null },
+  { cat: "Compliance & PHI", q: "What's safe to use Claude for, with no PHI concerns?",
+    a: "• Drafting job postings, interview questions, offer letters\n• General scheduling/staffing logistics without naming clients or linking coverage to a specific client's care needs\n• Policy explanations, HR language, performance documentation templates (using placeholder names, not real ones)\n• Internal comms, training material drafts, general compliance research",
+    moduleId: null },
+  { cat: "Compliance & PHI", q: "I accidentally pasted client PHI into the wrong tool (e.g. Cowork). What do I do?",
+    a: "1. Stop the conversation — don't continue building on it.\n2. Do not assume deleting it fixes anything. Retention and audit behavior vary by product, and Cowork specifically does not produce the kind of audit trail HIPAA compliance would require.\n3. Report it immediately to [Privacy/Compliance Officer name/role] the same way you'd report any other PHI disclosure incident. Under DHS rules, this may be a reportable event — don't sit on it hoping it's fine.\n4. This is a \"tell someone, don't hide it\" situation. Self-correcting silently is the bigger risk, not the mistake itself.",
+    moduleId: null },
+  { cat: "Compliance & PHI", q: "Can I use my personal Claude account (Pro/Free/Max) for work stuff?",
+    a: "No — for anything involving BrightPath, PHI or not. Personal accounts are outside the BAA entirely and outside our org's data controls, retention settings, and audit logging. Use only your BrightPath-issued Enterprise login.",
+    moduleId: null },
+  { cat: "Compliance & PHI", q: "Who do I ask if I'm not sure whether something is safe to share?",
+    a: "[Insert: Privacy Officer / Compliance contact name, email, and escalation path]. When in doubt, don't paste — ask first.",
+    moduleId: null },
+  { cat: "Compliance & PHI", q: "How current is this compliance guidance?",
+    a: "This FAQ was last verified against Anthropic's published BAA/HIPAA documentation in September 2026. Anthropic revises product coverage regularly, so treat this as a living document — re-check periodically and confirm with [Compliance/Privacy Officer name] before relying on it for a new or unfamiliar use case.",
+    moduleId: null },
 ];
 
 // ─── Learners ──────────────────────────────────────────────────────────────

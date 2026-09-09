@@ -723,6 +723,93 @@ window.BP_MODULES = [
       ], answer: 1 },
     ],
   },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  {
+    id: "m12",
+    code: "MOS-101",
+    title: "BrightPath MOS",
+    subtitle: "Running weekly meetings, metrics, and department workflows",
+    duration: "25 min",
+    category: "Internal Tools",
+    description: "A tour of MOS — BrightPath's EOS L10 platform — covering the weekly meeting tabs, department pages, Billing, and the cross-functional tools every team shares.",
+    slides: [
+      { type: "cover", eyebrow: "Module 12 · Internal Tools", title: "BrightPath MOS", subtitle: "Your team's weekly meeting, metrics, and workflow platform.", body: "MOS — the Management Operating System — is how BrightPath runs its weekly L10 meetings, tracks Rocks and Scorecard metrics, manages Issues, and operates day-to-day department workflows like Billing and Operations tracking. This module walks through every area of the app so you can navigate it with confidence." },
+      { type: "content", title: "What Is MOS, and Why Does It Exist?", body: "MOS is BrightPath's implementation of EOS L10 — a system built around a single weekly meeting agenda: Rocks (this quarter's priorities), Scorecard (the numbers that matter), and Issues (anything blocking the team), solved through Identify, Discuss, Solve.\n\nMOS is a web application — there's nothing to install. Sign in with your BrightPath Google account using the Continue with Google button on the login page. Access to each department and tool is controlled behind the scenes, so what you see after logging in reflects what you're set up to access. If something you need isn't visible, ask your administrator to add you." },
+      { type: "pillars", title: "Finding Your Way — The Sidebar", items: [
+        { k: "Overview", v: "Exec Summary and Exec Workspace, for company-wide visibility." },
+        { k: "Departments", v: "Services, Residential, UBS, QA & Training, Finance/HR, and IT. Each has its own full set of L10 meeting tools." },
+        { k: "Cross-functional", v: "Operations, Financials, and the SOP Library — shared tools any team can use, not tied to one department." },
+        { k: "Admin", v: "Data Imports and Systems & Data Flow, for keeping MOS in sync with Zoho, QuickBooks, Therap, When I Work, and more." },
+      ]},
+      { type: "callout", title: "Tip", body: "Residential and UBS are subteams of Services, but they each have their own full set of meeting tools and their own place in the sidebar — you don't need to go through Services to reach them." },
+      { type: "pillars", title: "Every Department Runs the Same Six Tabs", items: [
+        { k: "Agenda", v: "A guided run-through of the meeting — a checklist of what to cover and roughly how long to spend on each segment." },
+        { k: "Scorecard (Metrics)", v: "The weekly numbers your department tracks. Enter this week's number directly in the table — a metric that misses its goal is flagged automatically and creates an Issue for you." },
+        { k: "Rocks", v: "The quarter's priorities, grouped by owner. Each has a status — on-track, off-track, or done — and a comment thread. Marking a Rock off-track automatically creates a matching Issue; marking it back on-track clears it." },
+        { k: "Project Plan", v: "The concrete work items underneath a Rock. Drag the status badge through Not Started → In Progress → Blocked → Done." },
+        { k: "To Do List", v: "Action items from last week's meeting. Unfinished items don't carry forward automatically — use the carry over option to bring them into the new week." },
+        { k: "Issues List & IDS", v: "Anything blocking the team, tracked through Identify, Discuss, Solve. Send an issue to the To Do list (something to act on) or the V/TO Issues List (longer-term, not for this week)." },
+      ]},
+      { type: "list", title: "Two More Department Tools", items: [
+        "V/TO (Vision/Traction Organizer) — the department's longer-range plan: core focus, 10-year target, marketing strategy, 3-year picture.",
+        "V/TO Issues List (the Parking Lot) — issues that matter but aren't urgent enough for this week.",
+        "Cascading Messages — a short, one-way summary of what came out of the meeting, shared down to the rest of the team who weren't in the room.",
+        "Issues tagged AUTO were created automatically from an off-track Rock or an off-goal metric — they clear themselves once the underlying item is back on track.",
+      ]},
+      { type: "pillars", title: "Departments at a Glance", items: [
+        { k: "Services", v: "The umbrella department over Residential and UBS. Includes a Zoho tab with live referral and intake data." },
+        { k: "Residential", v: "A subteam of Services with its own full L10 meeting tools, independent of the main Services page." },
+        { k: "UBS", v: "Also a subteam of Services — additionally gets its own department-level V/TO, distinct from the Services V/TO." },
+        { k: "QA & Training", v: "Standard L10 meeting tools — no additional department-specific tabs." },
+        { k: "Finance/HR", v: "Standard L10 tools plus a Billing tab — the most involved tool in MOS (next up)." },
+        { k: "IT", v: "Standard L10 tools plus a Project Board — a Kanban board for IT projects, separate from Rocks/Project Plan." },
+      ]},
+      { type: "content", title: "Finance/HR — Billing & the Billing Ledger", body: "The Billing tab automates the biweekly Therap EVV billing process for UBS (individual EA/IHS clients) and CRS (residential group-home clients). It has three views:\n\n• Roster & Upload — upload a Therap \"Billing Summary Search\" export for a two-week period. MOS adds new clients, totals billable units, and flags any row with no Medicaid Number for manual review.\n• UBS Ledger & CRS Ledger — where the dollar math happens, replacing the manual Billing Cheat Sheet spreadsheet. Rate and Budget Hrs/Wk only need to be entered once — MOS carries them forward automatically. Prior Period A/R also carries forward on its own; you never re-type a running balance.\n• SA End dates color amber within 30 days of expiring and red once expired, so nothing slips through unnoticed." },
+      { type: "callout", title: "Note", body: "Spenddown (UBS) reduces what's actually collected but never affects the A/R balance — it represents an amount billed directly to the client, not Medicaid." },
+      { type: "list", title: "Cross-Functional Tools — Shared Across Departments", items: [
+        "Operations — replaces several Google Sheet trackers: onboarding/training/offboarding, UBS staffing pattern, caseload weekly compliance, employee roster (retention and tenure computed live), candidate pipeline, and Residential daily compliance.",
+        "Financials — live QuickBooks data company-wide (profit & loss by year and class), plus the Financial Calendar tracking payroll, billing submissions, month-end close, and FP&A dates.",
+        "SOP Library — document how a process actually works today. Fill out process owner, backup owner, purpose, and a step-by-step breakdown; saving gives you a clean, read-only page for that process.",
+        "IT Project Board — see Departments above; switch to the Gantt view to see every project's timeline at a glance.",
+      ]},
+      { type: "content", title: "Executive Summary, Executive Workspace & Admin", body: "Exec Summary is a read-only, company-wide rollup — a quick view across every department's status without digging into each one. Exec Workspace is a full L10 meeting environment at the company level, plus an Accountability Chart (the org structure) and a User Access List — a self-service report of who has access to what, useful for auditing without asking an administrator to check manually.\n\nUnder Admin, Data Imports is where connected systems (Zoho CRM, QuickBooks, JazzHR, When I Work, Therap) get synced into MOS. Systems & Data Flow documents how those integrations fit together — useful mainly for administrators troubleshooting a sync issue." },
+      { type: "callout", title: "Rule of thumb", body: "Owner fields are dropdowns everywhere — Rocks, Metrics, Project Plan, Kanban, SOP Library — all pull from the same shared list of MOS users. If something you expect to see is missing, double-check the week and quarter picker at the top of the page first." },
+      { type: "outro", title: "Ready for your knowledge check?", body: "Five questions on navigating MOS, the L10 meeting tabs, and how Billing and cross-functional tools work." },
+    ],
+    quiz: [
+      { q: "What happens automatically when a Scorecard metric misses its goal?", choices: [
+        "Nothing — someone has to manually flag it.",
+        "It's flagged, and an entry is automatically created on the Issues List.",
+        "The metric is deleted from the scorecard.",
+        "It reassigns the metric to a new owner.",
+      ], answer: 1 },
+      { q: "Scenario — During the L10 meeting you mark a Rock as off-track. What happens next?", choices: [
+        "You have to separately create an Issue by hand.",
+        "MOS automatically creates a matching entry on the Issues List; marking it back on-track clears it.",
+        "The Rock is removed from the scorecard.",
+        "Nothing changes until the end of the quarter.",
+      ], answer: 1 },
+      { q: "Which statement about Residential and UBS is correct?", choices: [
+        "They are standalone departments, unrelated to Services.",
+        "They are subteams of Services, each with their own full set of L10 meeting tools.",
+        "They only appear inside the main Services page.",
+        "They share a single V/TO with Services.",
+      ], answer: 1 },
+      { q: "In the Billing Ledger, what carries forward automatically from one period to the next?", choices: [
+        "Nothing — every field must be re-entered each period.",
+        "Rate, Budget Hrs/Wk (or Framework Portion), and Prior Period A/R.",
+        "Only the client's name.",
+        "The Service Authorization end date.",
+      ], answer: 1 },
+      { q: "A department page and a cross-functional tool differ in that:", choices: [
+        "A department page is scoped to a team and to the week/quarter you're viewing; a cross-functional tool always shows live, current data.",
+        "Cross-functional tools are only visible to admins.",
+        "Department pages don't have Rocks or Scorecards.",
+        "There's no difference — they're the same thing.",
+      ], answer: 0 },
+    ],
+  },
 ];
 
 // ─── FAQs ──────────────────────────────────────────────────────────────────

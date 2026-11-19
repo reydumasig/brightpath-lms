@@ -70,28 +70,15 @@ DO $$ BEGIN
 END $$;
 
 -- ─── Row Level Security ──────────────────────────────────────
--- We use Google domain-restricted OAuth in the app layer, so
--- anon key access is scoped by the LMS logic (not Supabase auth).
+-- Sign-in is verified by Supabase Auth (Google); rows are scoped by policies
+-- in supabase-lms-security.sql.
 ALTER TABLE bp_learners          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bp_progress          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bp_quiz_submissions  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bp_certificates      ENABLE ROW LEVEL SECURITY;
 
--- Allow full access via anon key (domain gate is enforced in-app by Google OAuth)
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'bp_learners_open') THEN
-    CREATE POLICY bp_learners_open         ON bp_learners         FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'bp_progress_open') THEN
-    CREATE POLICY bp_progress_open         ON bp_progress         FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'bp_quiz_open') THEN
-    CREATE POLICY bp_quiz_open             ON bp_quiz_submissions FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'bp_certs_open') THEN
-    CREATE POLICY bp_certs_open            ON bp_certificates     FOR ALL USING (true) WITH CHECK (true);
-  END IF;
-END $$;
+-- Access policies live in supabase-lms-security.sql (run it after this file).
+-- Do NOT add open "USING (true)" policies here: they expose all staff data to the public key.
 
 -- 5. Applicant assessment results (standalone portal, code-based auth)
 CREATE TABLE IF NOT EXISTS bp_assessment_results (
@@ -110,7 +97,7 @@ CREATE TABLE IF NOT EXISTS bp_assessment_results (
   time_taken_secs  INTEGER
 );
 ALTER TABLE bp_assessment_results ENABLE ROW LEVEL SECURITY;
-CREATE POLICY bp_assessment_open ON bp_assessment_results FOR ALL USING (true) WITH CHECK (true);
+-- No open policy: candidates use the functions in supabase-assessment-hardening.sql.
 
 -- Done.
 SELECT 'BrightPath LMS schema ready.' AS status;

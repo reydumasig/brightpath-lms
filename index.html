@@ -1848,16 +1848,19 @@ Object.assign(window, { FadeIn, BPLogo, Background, Header, GlassCard, GlassButt
 const GOOGLE_CLIENT_ID = "1011406832233-gg1o0slnva79dem8m8ukei0ovi2f2tsi.apps.googleusercontent.com";
 
 const ALLOWED_DOMAINS = ["brightpath-mn.com", "s360team.com"];
-const ADMIN_EMAILS    = [
-  "rey@s360team.com",
-  "admin@brightpath-mn.com",
-  "admin@s360team.com",
-  "johnpaul.miller@brightpath-mn.com",
-  "brandon.spears@brightpath-mn.com",
-  "stephanie.noll@brightpath-mn.com",
-  "rey.dumasig@brightpath-mn.com",
-  "nicole.buechler@brightpath-mn.com",
-];
+// Admins are listed in the bp_admins table (supabase-lms-security.sql) and
+// checked by the database via bp_is_admin(). Never decide admin access here.
+
+// Build the signed-in identity from the Supabase-verified user record.
+function identityFromUser(user) {
+  const md = user.user_metadata || {};
+  const email = (user.email || "").toLowerCase();
+  return {
+    email,
+    name:    md.full_name || md.name || email,
+    picture: md.avatar_url || md.picture || null,
+  };
+}
 
 function LoginScreen({ onAuth }) {
   const [err, setErr]       = useState("");
@@ -1885,28 +1888,30 @@ function LoginScreen({ onAuth }) {
     } catch { return null; }
   }
 
-  // Called by Google after the user picks an account
-  function handleCredential(response) {
+  // Called by Google after the user picks an account.
+  // The Google token is verified by Supabase (signature, audience, expiry);
+  // the domain check here is only for a friendly message — the database
+  // enforces it again on every request.
+  async function handleCredential(response) {
     setErr("");
     const payload = parseJWT(response.credential);
-    if (!payload) {
-      setErr("Authentication failed — please try again.");
-      return;
-    }
-    const email  = (payload.email || "").toLowerCase();
-    const domain = email.split("@")[1] || "";
+    const email   = ((payload && payload.email) || "").toLowerCase();
+    const domain  = email.split("@")[1] || "";
     if (!ALLOWED_DOMAINS.includes(domain)) {
       setErr("Access is restricted to @brightpath-mn.com and @s360team.com accounts.");
       window.google?.accounts?.id?.cancel?.();
       return;
     }
-    const isAdmin = ADMIN_EMAILS.includes(email) || email.startsWith("admin@");
-    onAuth({
-      email,
-      name:    payload.name    || email,
-      picture: payload.picture || null,
-      role:    isAdmin ? "admin" : "learner",
+    const { data, error } = await _sb.auth.signInWithIdToken({
+      provider: "google",
+      token:    response.credential,
     });
+    if (error || !data?.user) {
+      console.warn("[BP] signInWithIdToken:", error?.message);
+      setErr("We couldn't verify your Google sign-in. Please try again, or contact IT if this keeps happening.");
+      return;
+    }
+    onAuth(identityFromUser(data.user));
   }
 
   function mountButton() {
@@ -3992,52 +3997,23 @@ function App() {
   const [learners, setLearners] = useState(window.BP_LEARNERS);
   const [progressByLearner, setProgressByLearner] = useState(window.BP_SEED_PROGRESS);
 
-  // ─── Session restore — re-hydrate from localStorage on first load ─────────
+  // ─── Session restore — Supabase keeps the verified sign-in across refreshes ─
+  const [restoring, setRestoring] = useState(true);
   useEffect(() => {
-    const saved = localStorage.getItem(BP_SESSION_KEY);
-    if (!saved) { setDbReady(true); return; }
-    try {
-      const session = JSON.parse(saved);
-      if (!session?.email || !session?.role) { localStorage.removeItem(BP_SESSION_KEY); setDbReady(true); return; }
-      // Correct stale role — admin emails always get admin regardless of what was cached
-      if (ADMIN_EMAILS.includes(session.email) || session.email.startsWith("admin@")) {
-        session.role = "admin";
-        localStorage.setItem(BP_SESSION_KEY, JSON.stringify(session));
-      }
-      setAuth(session);
-      setTweak("role", session.role);
-      // Ensure learner row exists (handles returning users on new devices)
-      BPBackend.upsertLearner({ email: session.email, name: session.name, picture: session.picture, role: session.role });
-      // Fetch this user's progress from DB
-      BPBackend.fetchProgress(session.email).then(dbProg => {
-        if (dbProg && Object.keys(dbProg).length > 0) {
-          setProgressByLearner(prev => ({ ...prev, [session.email]: dbProg }));
-        }
+    // Old unverified session format — no longer trusted.
+    try { localStorage.removeItem(BP_SESSION_KEY); } catch (_) {}
+    _sb.auth.getSession().then(async ({ data }) => {
+      const user = data?.session?.user;
+      if (!user) { setDbReady(true); return; }
+      const identity = identityFromUser(user);
+      if (!ALLOWED_DOMAINS.includes(identity.email.split("@")[1] || "")) {
+        await _sb.auth.signOut();
         setDbReady(true);
-      });
-      // Admin: also pull all learners + all progress from DB
-      if (session.role === "admin") {
-        Promise.all([
-          BPBackend.fetchAllLearners(),
-          BPBackend.fetchAllProgress(),
-        ]).then(([rows, allProg]) => {
-          const known = new Set(rows.map(r => r.email));
-          const synthetic = Object.keys(allProg)
-            .filter(e => !known.has(e))
-            .map(e => ({
-              id: "db-" + e.replace(/[^a-z0-9]/gi, ""),
-              email: e,
-              name: e.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
-              role: "learner",
-              job_title: "Direct Support Professional",
-              status: "Onboarding",
-              joined: "",
-            }));
-          setLearners([...rows, ...synthetic]);
-          setProgressByLearner(prev => ({ ...prev, ...allProg }));
-        });
+        return;
       }
-    } catch(e) { localStorage.removeItem(BP_SESSION_KEY); setDbReady(true); }
+      await startSession(identity);
+    }).catch(() => setDbReady(true))
+      .finally(() => setRestoring(false));
   }, []);
 
   // ─── View state ──────────────────────────────────────────────────────────
@@ -4107,6 +4083,7 @@ function App() {
   // Role switch from tweaks — instant swap (demo)
   useEffect(() => {
     if (!auth) return;
+    if (t.role === "admin" && auth.verifiedRole !== "admin") { setTweak("role", "learner"); return; }
     if (t.role !== auth.role) {
       setAuth({ ...auth, role: t.role });
       setView("dashboard");
@@ -4123,10 +4100,13 @@ function App() {
   }, [t.density, t.background, t.accent, t.glassOpacity]);
 
   // ─── Auth handlers ───────────────────────────────────────────────────────
-  function handleAuth({ email, role, name, picture }) {
-    const authData = { email, role, name: name || email, picture: picture || null };
-    // Persist session so page refresh doesn't log the user out
-    localStorage.setItem(BP_SESSION_KEY, JSON.stringify(authData));
+  // Called after Supabase has verified the Google sign-in (login or restore).
+  // Admin status comes from the database, never from the browser.
+  async function startSession({ email, name, picture }) {
+    const { data: isAdmin, error: roleErr } = await _sb.rpc("bp_is_admin");
+    if (roleErr) console.warn("[BP] bp_is_admin:", roleErr.message);
+    const role = isAdmin === true ? "admin" : "learner";
+    const authData = { email, role, verifiedRole: role, name: name || email, picture: picture || null };
     setAuth(authData);
     setTweak("role", role);
     setView("dashboard");
@@ -4171,7 +4151,7 @@ function App() {
     if (auth?.email && window.google?.accounts?.id) {
       window.google.accounts.id.revoke(auth.email, () => {});
     }
-    localStorage.removeItem(BP_SESSION_KEY);
+    _sb.auth.signOut().catch(() => {});
     setAuth(null);
     setProgressByLearner(window.BP_SEED_PROGRESS); // reset to seed
     setLearners(window.BP_LEARNERS);
@@ -4194,8 +4174,8 @@ function App() {
     <div className="bp-app" data-anim={t.animation}>
       <Background variant={bgVariant}/>
 
-      {!auth && !localStorage.getItem(BP_SESSION_KEY) ? (
-        <LoginScreen onAuth={handleAuth}/>
+      {!auth && !restoring ? (
+        <LoginScreen onAuth={startSession}/>
       ) : !auth ? (
         /* Session found in localStorage — show spinner while DB loads */
         <div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh"}}>
@@ -4335,7 +4315,7 @@ function App() {
                      options={["compact","comfortable"]}
                      onChange={(v) => setTweak("density", v)}/>
 
-        {auth && (
+        {auth?.verifiedRole === "admin" && (
           <>
             <TweakSection label="Role"/>
             <TweakRadio label="View as" value={t.role}

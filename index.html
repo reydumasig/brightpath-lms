@@ -1861,6 +1861,18 @@ const ADMIN_EMAILS    = [
 
 function LoginScreen({ onAuth }) {
   const [err, setErr]       = useState("");
+  const [showApplicant, setShowApplicant] = useState(false);
+  const [applicantCode, setApplicantCode] = useState("");
+
+  // Applicants never get an LMS session. The code is checked by the assessment
+  // page itself (server-side); we only hand it over and route them there.
+  function startAssessment(e) {
+    e.preventDefault();
+    const code = applicantCode.trim().toUpperCase().replace(/\s+/g, "");
+    if (!code) { setErr("Please enter your assessment code."); return; }
+    try { sessionStorage.setItem("bp_assess_code", code); } catch (_) {}
+    window.location.href = "assessment.html";
+  }
   const [gisReady, setGisReady] = useState(false);
   const btnRef              = useRef(null);
 
@@ -1978,6 +1990,22 @@ function LoginScreen({ onAuth }) {
                 </div>
               )}
 
+              <div style={{marginTop:18,paddingTop:18,borderTop:"1px solid rgba(255,255,255,.14)"}}>
+                {!showApplicant ? (
+                  <button type="button" className="bp-link" style={{background:"none",border:0,padding:0,cursor:"pointer",textDecoration:"underline"}}
+                          onClick={() => { setErr(""); setShowApplicant(true); }}>
+                    Applicant? Enter your assessment code
+                  </button>
+                ) : (
+                  <form onSubmit={startAssessment} style={{display:"flex",flexDirection:"column",gap:10}}>
+                    <span className="bp-field-lbl">Assessment code</span>
+                    <input className="bp-input" value={applicantCode} autoFocus autoComplete="off" spellCheck={false}
+                           placeholder="BP-XXXX-XXXX"
+                           onChange={e => { setApplicantCode(e.target.value.toUpperCase()); setErr(""); }}/>
+                    <button type="submit" className="bp-btn bp-btn-primary bp-btn-md">Start assessment</button>
+                  </form>
+                )}
+              </div>
             </div>
           </FadeIn>
         </GlassCard>

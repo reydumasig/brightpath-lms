@@ -360,7 +360,7 @@
     <p class="subtitle">Enter the assessment code you received to begin.</p>
     <div class="form-group">
       <label for="code-input">Assessment Code</label>
-      <input type="text" id="code-input" placeholder="BP2024-XXXX"
+      <input type="text" id="code-input" placeholder="BP-XXXX-XXXX"
              autocomplete="off" spellcheck="false" autocapitalize="characters">
     </div>
     <div id="auth-error" class="error-msg" hidden></div>
@@ -545,15 +545,9 @@ const _BP_URL  = "https://iwkwtduribxfazkyvbry.supabase.co";
 const _BP_ANON = "sb_publishable_6bcmtKhQdh0s2azq27JzFQ_8fCIRynB";
 const TOTAL_SECS = 60 * 60; // 60 minutes
 
-// Valid codes → candidate display names
+// Codes and candidate names live only in the database (bp_assessment_candidates).
+// Access goes through the bp_assessment_start / bp_assessment_save functions.
 // IMPORTANT: answer key content must NEVER appear anywhere in this file.
-const VALID_CODES = {
-  "BP2024-4832": "Joel Abes",
-  "BP2024-7156": "Kerwin Saban",
-  "BP2024-9023": "Robinson Lagunday",
-  "BP2024-3417": "Allen Rama",
-  "BP2024-6589": "Joseph Lince",
-};
 
 // ─── Supabase client ─────────────────────────────────────────────────────────
 const _sb = window.supabase.createClient(_BP_URL, _BP_ANON);
@@ -653,12 +647,10 @@ function startTimer() {
 async function doAutoSave() {
   if (!currentCode || isSubmitting) return;
   lsSave();
-  const { error } = await _sb
-    .from("bp_assessment_results")
-    .update(collectPayload())
-    .eq("assessment_code", currentCode)
-    .is("submitted_at", null);
-  if (!error) {
+  const { data, error } = await _sb.rpc("bp_assessment_save", {
+    p_code: currentCode, p_fields: collectPayload(), p_submit: false,
+  });
+  if (!error && data && data.status === "saved") {
     const t = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     $saveStatus.textContent = "Draft saved at " + t + ".";
     $saveStatus.classList.add("saved");
@@ -681,15 +673,12 @@ async function doSubmit(timedOut = false) {
   $btnSubmit.disabled = true;
   $btnSubmit.textContent = "Submitting…";
 
-  const { error } = await _sb
-    .from("bp_assessment_results")
-    .update({
-      ...collectPayload(),
-      submitted_at:    new Date().toISOString(),
-      time_taken_secs: elapsedSecs(),
-    })
-    .eq("assessment_code", currentCode)
-    .is("submitted_at", null);
+  const { data, error: rpcErr } = await _sb.rpc("bp_assessment_save", {
+    p_code: currentCode, p_fields: collectPayload(), p_submit: true,
+  });
+  // "closed" after the grace window means the server already locked it; anything saved earlier stands.
+  const ok = data && (data.status === "submitted" || data.status === "closed");
+  const error = rpcErr || (ok ? null : new Error("unexpected response"));
 
   if (error) {
     isSubmitting = false;
@@ -719,83 +708,41 @@ async function handleStart() {
     showAuthError("Please enter your assessment code.");
     return;
   }
-  if (!VALID_CODES[code]) {
-    showAuthError("That code is not recognized. Check for typos and try again, or contact your recruiter.");
-    return;
-  }
-
   $btnStart.disabled = true;
   $btnStart.textContent = "Verifying…";
+  const resetBtn = () => { $btnStart.disabled = false; $btnStart.textContent = "Begin Assessment"; };
 
-  // Check for existing row in Supabase
-  const { data: row, error: selErr } = await _sb
-    .from("bp_assessment_results")
-    .select("*")
-    .eq("assessment_code", code)
-    .maybeSingle();
-
-  if (selErr) {
-    $btnStart.disabled = false;
-    $btnStart.textContent = "Begin Assessment";
+  const { data: res, error: rpcErr } = await _sb.rpc("bp_assessment_start", { p_code: code });
+  if (rpcErr || !res) {
+    resetBtn();
     showAuthError("Could not connect to the server. Check your internet connection and try again.");
     return;
   }
-
-  if (row && row.submitted_at) {
-    $btnStart.disabled = false;
-    $btnStart.textContent = "Begin Assessment";
+  if (res.status === "invalid") {
+    resetBtn();
+    showAuthError("That code is not recognized. Check for typos and try again, or contact your recruiter.");
+    return;
+  }
+  if (res.status === "submitted") {
+    resetBtn();
     showAuthError("This assessment has already been submitted. Contact your recruiter if you think this is an error.");
+    return;
+  }
+  if (res.status === "expired") {
+    resetBtn();
+    showAuthError("Your 60-minute window has expired. Contact your recruiter for next steps.");
     return;
   }
 
   currentCode   = code;
-  candidateName = VALID_CODES[code];
-
-  if (row) {
-    // Resume in-progress session
-    startedAt = new Date(row.started_at).getTime();
-    const elapsed = elapsedSecs();
-    if (elapsed >= TOTAL_SECS) {
-      $btnStart.disabled = false;
-      $btnStart.textContent = "Begin Assessment";
-      showAuthError("Your 60-minute window has expired. Contact your recruiter for next steps.");
-      return;
-    }
-    // Populate from Supabase, then merge from localStorage (keep whichever is longer)
-    populateFrom(row);
-    const ls = lsLoad();
-    if (ls) {
-      for (const [k, el] of Object.entries(FIELDS)) {
-        if ((ls[k] || "").length > el.value.length) el.value = ls[k];
-      }
-    }
-  } else {
-    // First attempt — create row
-    const { error: insErr } = await _sb
-      .from("bp_assessment_results")
-      .insert({
-        assessment_code: code,
-        candidate_name:  candidateName,
-        started_at:      new Date().toISOString(),
-      });
-    if (insErr) {
-      // May have been inserted by a parallel request — retry select
-      const { data: retry } = await _sb
-        .from("bp_assessment_results")
-        .select("*")
-        .eq("assessment_code", code)
-        .maybeSingle();
-      if (retry && !retry.submitted_at) {
-        startedAt = new Date(retry.started_at).getTime();
-        populateFrom(retry);
-      } else {
-        $btnStart.disabled = false;
-        $btnStart.textContent = "Begin Assessment";
-        showAuthError("Could not start the assessment. Please try again.");
-        return;
-      }
-    } else {
-      startedAt = Date.now();
+  candidateName = res.name;
+  startedAt     = new Date(res.started_at).getTime();
+  populateFrom(res);
+  // Merge from localStorage (keep whichever is longer)
+  const ls = lsLoad();
+  if (ls) {
+    for (const [k, el] of Object.entries(FIELDS)) {
+      if ((ls[k] || "").length > el.value.length) el.value = ls[k];
     }
   }
 
@@ -806,6 +753,13 @@ async function handleStart() {
   startTimer();
   scheduleAutoSave();
 }
+
+// Arrive from the LMS login screen with the code already entered
+(function () {
+  let pre = null;
+  try { pre = sessionStorage.getItem("bp_assess_code"); sessionStorage.removeItem("bp_assess_code"); } catch (_) {}
+  if (pre) { $codeInput.value = pre; handleStart(); }
+})();
 
 // ─── Event listeners ──────────────────────────────────────────────────────────
 $btnStart.addEventListener("click", handleStart);

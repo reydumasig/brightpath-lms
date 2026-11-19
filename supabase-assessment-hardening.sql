@@ -22,6 +22,9 @@ CREATE TABLE IF NOT EXISTS bp_assessment_results (
 );
 ALTER TABLE bp_assessment_results ENABLE ROW LEVEL SECURITY;  -- no policies = no direct access
 
+-- Paste / tab-switch / typing-timeline signals recorded by assessment.html.
+ALTER TABLE bp_assessment_results ADD COLUMN IF NOT EXISTS integrity_log JSONB;
+
 -- Candidates + their codes live only in the database (never in page source).
 CREATE TABLE IF NOT EXISTS bp_assessment_candidates (
   code  TEXT PRIMARY KEY,
@@ -63,7 +66,7 @@ BEGIN
     'part1_response',r.part1_response,'part2_issues',r.part2_issues,
     'part2_method',r.part2_method,'part2_assumptions',r.part2_assumptions,
     'part3_message',r.part3_message,'part3_actions',r.part3_actions,
-    'tools_used',r.tools_used);
+    'tools_used',r.tools_used,'integrity_log',r.integrity_log);
 END $$;
 
 -- Autosave or submit. Accepts a JSON object of the seven answer fields.
@@ -89,6 +92,9 @@ BEGIN
     part3_message     = left(coalesce(p_fields->>'part3_message',     part3_message),     20000),
     part3_actions     = left(coalesce(p_fields->>'part3_actions',     part3_actions),     20000),
     tools_used        = left(coalesce(p_fields->>'tools_used',        tools_used),        20000),
+    integrity_log     = CASE WHEN jsonb_typeof(p_fields->'integrity') = 'object'
+                              AND length((p_fields->'integrity')::text) < 200000
+                             THEN p_fields->'integrity' ELSE integrity_log END,
     submitted_at      = CASE WHEN p_submit THEN now() END,
     time_taken_secs   = CASE WHEN p_submit
                           THEN least(3600, extract(epoch FROM now() - started_at)::int) END

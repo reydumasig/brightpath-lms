@@ -394,6 +394,7 @@
         <a href="data/Workspace users.csv" download class="file-link">Workspace users.csv</a>
         <a href="data/Payroll roster.csv" download class="file-link">Payroll roster.csv</a>
       </p>
+      <p><strong>Please note:</strong> this page records when you paste text and when you leave this tab or window, along with how your answers grow over time. AI assistants are allowed; list everything you used in the Tools box at the end.</p>
       <p class="save-status" id="save-status">Your draft will auto-save every 60 seconds.</p>
     </section>
 
@@ -615,12 +616,66 @@ function populateFrom(row) {
 function lsKey() { return "bp_assess_v1_" + currentCode; }
 function lsSave() {
   try {
-    localStorage.setItem(lsKey(), JSON.stringify({ ...collectPayload(), ts: Date.now() }));
+    localStorage.setItem(lsKey(), JSON.stringify({ ...collectPayload(), integrity, ts: Date.now() }));
   } catch (_) {}
 }
 function lsLoad() {
   try { return JSON.parse(localStorage.getItem(lsKey())); } catch (_) { return null; }
 }
+
+// ─── Integrity signals (paste, leaving the page, typing timeline) ────────────
+// Signals for the follow-up interview, not proof of anything on their own.
+const MAX_EVENTS = 300;
+function newIntegrity() {
+  return { v: 1, paste_count: 0, paste_chars: 0, away_count: 0, away_secs: 0,
+           pastes: [], away: [], timeline: [], resumes: [] };
+}
+let integrity = newIntegrity();
+let awayStart = null, awayHidden = false;
+
+function integrityWeight(x) {
+  return x ? (x.paste_count || 0) + (x.away_count || 0) + ((x.timeline || []).length) : -1;
+}
+function pushCapped(arr, item) { arr.push(item); if (arr.length > MAX_EVENTS) arr.shift(); }
+function totalChars() {
+  let n = 0;
+  for (const el of Object.values(FIELDS)) n += el.value.length;
+  return n;
+}
+function recordTimeline() {
+  if (!currentCode) return;
+  pushCapped(integrity.timeline, { t: elapsedSecs(), chars: totalChars() });
+}
+function isTracking() { return !!currentCode && !isSubmitting && !$assessScreen.hidden; }
+function markAway(hidden) {
+  if (!isTracking()) return;
+  if (awayStart === null) awayStart = Date.now();
+  if (hidden) awayHidden = true;
+}
+function markBack() {
+  if (awayStart === null) return;
+  const secs = Math.round((Date.now() - awayStart) / 1000);
+  if (secs >= 1 && currentCode) {
+    integrity.away_count += 1;
+    integrity.away_secs  += secs;
+    pushCapped(integrity.away, {
+      t: Math.max(0, Math.floor((awayStart - startedAt) / 1000)),
+      secs, kind: awayHidden ? "tab_hidden" : "window_unfocused",
+    });
+  }
+  awayStart = null; awayHidden = false;
+}
+for (const [field, el] of Object.entries(FIELDS)) {
+  el.addEventListener("paste", e => {
+    if (!isTracking()) return;
+    const text = (e.clipboardData && e.clipboardData.getData("text")) || "";
+    integrity.paste_count += 1;
+    integrity.paste_chars += text.length;
+    pushCapped(integrity.pastes, { t: elapsedSecs(), field, chars: text.length });
+  });
+}
+window.addEventListener("blur",  () => markAway(false));
+window.addEventListener("focus", markBack);
 
 // ─── Timer ───────────────────────────────────────────────────────────────────
 function startTimer() {
@@ -647,8 +702,9 @@ function startTimer() {
 async function doAutoSave() {
   if (!currentCode || isSubmitting) return;
   lsSave();
+  recordTimeline();
   const { data, error } = await _sb.rpc("bp_assessment_save", {
-    p_code: currentCode, p_fields: collectPayload(), p_submit: false,
+    p_code: currentCode, p_fields: { ...collectPayload(), integrity }, p_submit: false,
   });
   if (!error && data && data.status === "saved") {
     const t = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -673,8 +729,11 @@ async function doSubmit(timedOut = false) {
   $btnSubmit.disabled = true;
   $btnSubmit.textContent = "Submitting…";
 
+  markBack();
+  recordTimeline();
+  integrity.submitted_by = timedOut ? "timer" : "candidate";
   const { data, error: rpcErr } = await _sb.rpc("bp_assessment_save", {
-    p_code: currentCode, p_fields: collectPayload(), p_submit: true,
+    p_code: currentCode, p_fields: { ...collectPayload(), integrity }, p_submit: true,
   });
   // "closed" after the grace window means the server already locked it; anything saved earlier stands.
   const ok = data && (data.status === "submitted" || data.status === "closed");
@@ -745,6 +804,11 @@ async function handleStart() {
       if ((ls[k] || "").length > el.value.length) el.value = ls[k];
     }
   }
+  // Keep whichever integrity record has more in it; note that the page was reopened.
+  const base = integrityWeight(ls && ls.integrity) > integrityWeight(res.integrity_log)
+    ? ls.integrity : res.integrity_log;
+  integrity = Object.assign(newIntegrity(), base || {});
+  if (base) pushCapped(integrity.resumes, { t: elapsedSecs() });
 
   // Show assessment
   $authScreen.hidden = true;
@@ -776,6 +840,7 @@ $btnSubmit.addEventListener("click", () => {
 
 // Save to localStorage when tab is hidden or page is about to unload
 document.addEventListener("visibilitychange", () => {
+  if (document.hidden) markAway(true); else markBack();
   if (document.hidden && currentCode && !isSubmitting) {
     lsSave();
     doAutoSave();

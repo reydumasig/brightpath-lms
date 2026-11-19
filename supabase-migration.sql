@@ -1,6 +1,6 @@
 -- ─────────────────────────────────────────────────────────────
 -- BrightPath LMS — Supabase Schema Migration
--- Run once against: memcdxfldbytydwnuwps.supabase.co
+-- Run once against: iwkwtduribxfazkyvbry.supabase.co
 -- ─────────────────────────────────────────────────────────────
 
 -- 1. Learner profiles (one row per Google account)
@@ -92,6 +92,25 @@ DO $$ BEGIN
     CREATE POLICY bp_certs_open            ON bp_certificates     FOR ALL USING (true) WITH CHECK (true);
   END IF;
 END $$;
+
+-- 5. Applicant assessment results (standalone portal, code-based auth)
+CREATE TABLE IF NOT EXISTS bp_assessment_results (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  assessment_code  TEXT UNIQUE NOT NULL,
+  candidate_name   TEXT NOT NULL,
+  started_at       TIMESTAMPTZ,
+  submitted_at     TIMESTAMPTZ,
+  part1_response   TEXT,
+  part2_issues     TEXT,
+  part2_method     TEXT,
+  part2_assumptions TEXT,
+  part3_message    TEXT,
+  part3_actions    TEXT,
+  tools_used       TEXT,
+  time_taken_secs  INTEGER
+);
+ALTER TABLE bp_assessment_results ENABLE ROW LEVEL SECURITY;
+CREATE POLICY bp_assessment_open ON bp_assessment_results FOR ALL USING (true) WITH CHECK (true);
 
 -- Done.
 SELECT 'BrightPath LMS schema ready.' AS status;

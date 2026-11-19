@@ -1,0 +1,31 @@
+Employee ID,Full name,Work email,Job title,Employment status,Termination date
+E1001,Dana Whitfield,dana.whitfield@brightpath-demo.example,Executive Director,Active,
+E1002,Marcus Okoye,marcus.okoye@brightpath-demo.example,Director of Operations,Active,
+E1003,Priya Raman,priya.raman@brightpath-demo.example,HR Manager,Active,
+E1004,Tom Lindgren,tom.lindgren@brightpath-demo.example,Finance Manager,Active,
+E1005,Hannah Berg,hannah.berg@brightpath-demo.example,Program Director,Active,
+E1006,Luis Ortega,luis.ortega@brightpath-demo.example,Program Manager,Active,
+E1007,Grace Nwosu,grace.nwosu@brightpath-demo.example,Office Manager,Active,
+E1008,Ben Carlson,ben.carlson@brightpath-demo.example,Billing Specialist,Active,
+E1009,Aisha Rahman,aisha.rahman@brightpath-demo.example,Compliance Coordinator,Active,
+E1010,Kevin Zhao,kevin.zhao@brightpath-demo.example,IT Support Specialist,Active,
+E1011,Rosa Mendes,rosa.mendes@brightpath-demo.example,Scheduler,Active,
+E1012,Sam Peterson,sam.peterson@brightpath-demo.example,House Supervisor,Active,
+E1013,Tina Vu,tina.vu@brightpath-demo.example,House Supervisor,Active,
+E1014,Jamal Brooks,jamal.brooks@brightpath-demo.example,House Supervisor,Active,
+E1015,Elena Petrova,elena.petrova@brightpath-demo.example,Lead Direct Support Professional,Active,
+E1016,Carlos Rivera,carlos.rivera@brightpath-demo.example,Direct Support Professional,Active,
+E1017,Megan Olson,megan.olson@brightpath-demo.example,Direct Support Professional,Active,
+E1018,Joy Adeyemi,joy.adeyemi@brightpath-demo.example,Direct Support Professional,Active,
+E1019,Noah Fischer,noah.fischer@brightpath-demo.example,Direct Support Professional,Active,
+E1020,Linh Tran,linh.tran@brightpath-demo.example,Direct Support Professional,Active,
+E1021,Derek Moss,derek.moss@brightpath-demo.example,Direct Support Professional,Active,
+E1022,Sofia Alvarez,sofia.alvarez@brightpath-demo.example,Direct Support Professional,Active,
+E1023,Ibrahim Hassan,ibrahim.hassan@brightpath-demo.example,Direct Support Professional,Leave of absence,
+E1024,Chloe Martin,chloe.martin@brightpath-demo.example,Direct Support Professional,Active,
+E1025,Victor Nguyen,victor.nguyen@brightpath-demo.example,Direct Support Professional,Active,
+E1026,Patrick Doyle,patrick.doyle@brightpath-demo.example,Direct Support Professional,Terminated,2026-06-30
+E1027,Alicia Romero,alicia.romero@brightpath-demo.example,Program Manager,Terminated,2026-08-14
+E1028,Jeff Anders,jeff.anders@brightpath-demo.example,Direct Support Professional,Terminated,2026-10-30
+E1029,Monique Davis,monique.davis@brightpath-demo.example,Lead Direct Support Professional,Terminated,2026-05-22
+E1030,Rachel Kim,rachel.kim@brightpath-demo.example,Direct Support Professional,Active,

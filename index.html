@@ -1111,14 +1111,31 @@ const BPBackend = {
 
   // Admin: applicant assessment candidates + results (admin-only by database policy)
   async fetchAssessments() {
-    const [cand, res] = await Promise.all([
+    const [cand, res, scores, rubric] = await Promise.all([
       _sb.from("bp_assessment_candidates").select("code, name"),
       _sb.from("bp_assessment_results").select("*"),
+      _sb.from("bp_assessment_scores").select("*"),
+      _sb.from("bp_assessment_rubric").select("rubric").order("updated_at", { ascending: false }).limit(1),
     ]);
     if (cand.error || res.error) {
       throw new Error((cand.error || res.error).message);
     }
-    return { candidates: cand.data || [], results: res.data || [] };
+    const scoringError = scores.error || rubric.error;
+    return {
+      candidates: cand.data || [],
+      results:    res.data || [],
+      scores:     scores.data || [],
+      rubric:     (rubric.data && rubric.data[0] && rubric.data[0].rubric) || null,
+      scoringError: scoringError ? scoringError.message : null,
+    };
+  },
+
+  // Admin: save one candidate's score (who/when is stamped by the database)
+  async saveAssessmentScore(row) {
+    const { data, error } = await _sb.from("bp_assessment_scores")
+      .upsert(row, { onConflict: "assessment_code" }).select().single();
+    if (error) throw new Error(error.message);
+    return data;
   },
 
   // Admin: fetch all learners' progress keyed by email
@@ -3570,12 +3587,12 @@ function AdminProgress({ learners, modules, progressByLearner }) {
 // ─── Applicant assessments tab ─────────────────────────────────────────────
 // Candidate answers are untrusted text: render only as plain text (React escapes it).
 const BP_ASSESS_PARTS = [
-  { title: "Part 1 — Offboarding checklist", fields: [["part1_response", "Checklist"]] },
-  { title: "Part 2 — License reconciliation", fields: [
+  { title: "Part 1 — Offboarding checklist", scoreId: "part1", fields: [["part1_response", "Checklist"]] },
+  { title: "Part 2 — License reconciliation", scoreId: "part2", fields: [
       ["part2_issues", "Findings (a), (b), (c)"],
       ["part2_method", "Method"],
       ["part2_assumptions", "Assumptions and things to verify"] ] },
-  { title: "Part 3 — Written escalation", fields: [
+  { title: "Part 3 — Written escalation", scoreId: "part3", fields: [
       ["part3_message", "Message to manager"],
       ["part3_actions", "What they did first, and deliberately did not do"] ] },
   { title: "Tools and time", fields: [["tools_used", "Tools used and minutes spent"]] },
@@ -3638,7 +3655,131 @@ function AssessTimeline({ log }) {
   );
 }
 
-function AssessDetail({ cand, row }) {
+// Totals from rubric marks. The rubric itself is loaded from the database (admin-only).
+function bpComputeScore(rubric, marks) {
+  const out = { parts: {}, total: 0, knockedOut: false, passed: false, catchFound: 0, catchPts: 0, requiredMissed: false };
+  if (!rubric) return out;
+  marks = marks || {};
+  rubric.parts.forEach(part => {
+    let pts = 0;
+    (part.items || []).forEach(it => { pts += Math.min(it.points, Math.max(0, Number(marks[it.id]) || 0)); });
+    if (part.catch) {
+      const iss = part.catch.issues;
+      const found = iss.filter(i => marks[i.id] === true).length;
+      let c = Math.min(part.catch.max, Math.round(found * part.catch.max / Math.max(1, iss.length)));
+      const missed = iss.some(i => i.required && marks[i.id] !== true);
+      if (missed) c = Math.min(c, part.catch.capWithoutRequired);
+      out.catchFound = found; out.catchPts = c; out.requiredMissed = missed;
+      pts += c;
+    }
+    if ((part.knockouts || []).some(k => marks[k.id] === true)) out.knockedOut = true;
+    out.parts[part.id] = pts;
+    out.total += pts;
+  });
+  const bar = rubric.pass || {};
+  out.passed = !out.knockedOut && out.total >= (bar.total || 0) && (out.parts.part2 || 0) >= (bar.part2 || 0);
+  return out;
+}
+
+function ScoreStepper({ max, value, onChange }) {
+  const opts = Array.from({ length: max + 1 }, (_, i) => i);
+  return (
+    <div style={{display:"inline-flex",gap:4,flexShrink:0}} role="radiogroup">
+      {opts.map(n => (
+        <button key={n} type="button" role="radio" aria-checked={value === n} onClick={() => onChange(n)}
+          style={{minWidth:30,padding:"5px 8px",borderRadius:8,cursor:"pointer",font:"inherit",fontSize:12,fontWeight:700,
+                  border:"1px solid " + (value === n ? "rgba(255,210,0,.6)" : "rgba(255,255,255,.16)"),
+                  background: value === n ? "rgba(255,210,0,.18)" : "rgba(255,255,255,.04)",
+                  color: value === n ? "var(--bp-accent)" : "var(--bp-text-soft)"}}>{n}</button>
+      ))}
+    </div>
+  );
+}
+
+function RubricRow({ label, right, sub }) {
+  return (
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:14,padding:"9px 0",borderBottom:"1px solid rgba(255,255,255,.06)"}}>
+      <div style={{fontSize:13,lineHeight:1.45}}>{label}{sub && <div className="bp-tbl-sub">{sub}</div>}</div>
+      {right}
+    </div>
+  );
+}
+
+function RubricCheck({ checked, onChange, danger }) {
+  return <input type="checkbox" checked={!!checked} onChange={e => onChange(e.target.checked)}
+                style={{width:18,height:18,flexShrink:0,accentColor: danger ? "#f47272" : "#FFD200",cursor:"pointer"}}/>;
+}
+
+function PartScoring({ part, marks, setMark, score }) {
+  const pts = score.parts[part.id] || 0;
+  const under = pts < (part.bar || 0);
+  return (
+    <div style={{marginTop:14,padding:"14px 16px",borderRadius:12,background:"rgba(255,210,0,.05)",border:"1px solid rgba(255,210,0,.18)"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:4}}>
+        <div className="bp-welcome-eyebrow">Score this part</div>
+        <div style={{fontSize:13}}><b style={{fontSize:16}}>{pts}</b> / {part.max}
+          <span className="bp-tbl-sub" style={{marginLeft:8,color: under ? "#f99a9a" : undefined}}>bar {part.bar}</span></div>
+      </div>
+      {part.catch && (
+        <div style={{marginBottom:6}}>
+          <div className="bp-tbl-title" style={{margin:"8px 0 2px"}}>Issues found — {score.catchFound} of {part.catch.issues.length} → {score.catchPts} / {part.catch.max} pts</div>
+          <div className="bp-tbl-sub">Scaled to {part.catch.max} points. Capped at {part.catch.capWithoutRequired} unless the required catch is found.</div>
+          {part.catch.issues.map(i => (
+            <RubricRow key={i.id}
+              label={<span>{i.required && <span className="bp-pill bp-pill-danger" style={{marginRight:8}}>Required</span>}<span className="bp-pill bp-pill-neutral" style={{marginRight:8}}>{i.priority}</span>{i.label}</span>}
+              right={<RubricCheck checked={marks[i.id] === true} onChange={v => setMark(i.id, v)}/>}/>
+          ))}
+        </div>
+      )}
+      {(part.items || []).map(it => (
+        <RubricRow key={it.id} label={it.label}
+          right={<ScoreStepper max={it.points} value={Number(marks[it.id]) || 0} onChange={n => setMark(it.id, n)}/>}/>
+      ))}
+      {(part.knockouts || []).length > 0 && (
+        <div style={{marginTop:10}}>
+          <div className="bp-tbl-title" style={{color:"#f99a9a"}}>Knock-outs (any one means not hired, whatever the score)</div>
+          {part.knockouts.map(k => (
+            <RubricRow key={k.id} label={k.label}
+              right={<RubricCheck danger checked={marks[k.id] === true} onChange={v => setMark(k.id, v)}/>}/>
+          ))}
+        </div>
+      )}
+      {part.note && <p className="bp-tbl-sub" style={{marginTop:10,fontStyle:"italic"}}>{part.note}</p>}
+    </div>
+  );
+}
+
+function ScoreBadge({ saved }) {
+  if (!saved || saved.total == null) return <span className="bp-pill bp-pill-neutral">Not scored</span>;
+  const cls = saved.passed ? "bp-pill-success" : "bp-pill-danger";
+  const word = saved.knocked_out ? "Knock-out" : saved.passed ? "Pass" : "Below bar";
+  return <span className={"bp-pill " + cls}>{saved.total}/30 · {word}</span>;
+}
+
+function AssessDetail({ cand, row, rubric, saved, onSaved, scoringError }) {
+  const [marks, setMarks] = useState((saved && saved.marks) || {});
+  const [notes, setNotes] = useState((saved && saved.notes) || "");
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState("");
+  const score = useMemo(() => bpComputeScore(rubric, marks), [rubric, marks]);
+  const partById = id => rubric && rubric.parts.find(p => p.id === id);
+  function setMark(id, v) { setMarks(m => ({ ...m, [id]: v })); setDirty(true); setSaveMsg(""); }
+
+  async function save() {
+    setSaving(true); setSaveMsg("");
+    try {
+      const rowOut = await BPBackend.saveAssessmentScore({
+        assessment_code: cand.code, marks, notes,
+        part1: score.parts.part1 || 0, part2: score.parts.part2 || 0, part3: score.parts.part3 || 0,
+        total: score.total, knocked_out: score.knockedOut, passed: score.passed,
+      });
+      onSaved(rowOut); setDirty(false); setSaveMsg("Saved.");
+    } catch (e) {
+      setSaveMsg("Couldn't save: " + e.message);
+    } finally { setSaving(false); }
+  }
+
   const log = (row && row.integrity_log) || {};
   const bigPastes = (log.pastes || []).filter(p => p.chars >= 200);
   const longAway  = (log.away || []).filter(a => a.secs >= 30);
@@ -3651,6 +3792,25 @@ function AssessDetail({ cand, row }) {
           <div className="bp-tbl-sub">Code {cand.code} · started {bpFmtDate(row && row.started_at)} · submitted {bpFmtDate(row && row.submitted_at)}{row && row.time_taken_secs ? " · " + Math.round(row.time_taken_secs / 60) + " min" : ""}</div>
         </div>
       </div>
+
+      {row && rubric && (
+        <div style={{marginTop:18,padding:"14px 16px",borderRadius:12,display:"flex",flexWrap:"wrap",alignItems:"center",gap:16,
+                     background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)"}}>
+          <div style={{fontSize:22,fontWeight:700}}>{score.total}<span style={{fontSize:14,opacity:.6}}> / 30</span></div>
+          <span className={"bp-pill " + (score.passed ? "bp-pill-success" : "bp-pill-danger")}>
+            {score.knockedOut ? "Knock-out" : score.passed ? "Meets pass bar" : "Below pass bar"}</span>
+          <span className="bp-tbl-sub">Part 1 {score.parts.part1 || 0}/10 · Part 2 {score.parts.part2 || 0}/12 · Part 3 {score.parts.part3 || 0}/8 · Pass: 18+ total, 7+ on Part 2, no knock-out</span>
+          <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:10}}>
+            <span className="bp-tbl-sub">{saveMsg || (dirty ? "Unsaved changes" : saved && saved.updated_at ? "Saved " + bpFmtDate(saved.updated_at) + (saved.scored_by ? " by " + saved.scored_by : "") : "")}</span>
+            <GlassButton variant="primary" size="md" onClick={save} disabled={saving || !dirty}>{saving ? "Saving…" : "Save score"}</GlassButton>
+          </div>
+        </div>
+      )}
+      {row && !rubric && (
+        <p className="bp-tbl-sub" style={{marginTop:14,color:"#f99a9a"}}>
+          Scoring isn't available yet{scoringError ? " (" + scoringError + ")" : ""}. Run supabase-assessment-scoring.sql and the private rubric file in Supabase, then refresh.
+        </p>
+      )}
 
       {!row ? <p style={{marginTop:18}}>This candidate hasn't entered their code yet.</p> : (<>
         <h3 style={{margin:"24px 0 8px",fontSize:15}}>Activity signals</h3>
@@ -3699,8 +3859,23 @@ function AssessDetail({ cand, row }) {
                 </div>
               </div>
             ))}
+            {part.scoreId && rubric && partById(part.scoreId) && (
+              <PartScoring part={partById(part.scoreId)} marks={marks} setMark={setMark} score={score}/>
+            )}
           </div>
         ))}
+
+        {rubric && (
+          <div style={{marginTop:28}}>
+            <h3 style={{margin:"0 0 10px",fontSize:15}}>Reviewer notes</h3>
+            <textarea className="bp-input" rows="4" value={notes} style={{width:"100%",resize:"vertical"}}
+                      placeholder="What to ask in the 15-minute follow-up, anything that stood out…"
+                      onChange={e => { setNotes(e.target.value); setDirty(true); setSaveMsg(""); }}/>
+            <div style={{display:"flex",justifyContent:"flex-end",marginTop:10}}>
+              <GlassButton variant="primary" size="md" onClick={save} disabled={saving || !dirty}>{saving ? "Saving…" : "Save score"}</GlassButton>
+            </div>
+          </div>
+        )}
       </>)}
     </GlassCard>
   );
@@ -3735,6 +3910,14 @@ function AdminAssessments() {
 
   const counts = rows.reduce((acc, r) => { acc[bpAssessStatus(r.row, now).key] = (acc[bpAssessStatus(r.row, now).key] || 0) + 1; return acc; }, {});
   const sel = rows.find(r => r.cand.code === selected);
+  const scoreByCode = useMemo(() => {
+    const m = {};
+    ((data && data.scores) || []).forEach(sc => { m[sc.assessment_code] = sc; });
+    return m;
+  }, [data]);
+  function onSaved(sc) {
+    setData(d => ({ ...d, scores: [...(d.scores || []).filter(x => x.assessment_code !== sc.assessment_code), sc] }));
+  }
 
   return (
     <div className="bp-page">
@@ -3765,10 +3948,10 @@ function AdminAssessments() {
           <GlassCard padding={0} className="bp-table-card">
             <table className="bp-table">
               <thead>
-                <tr><th>Candidate</th><th>Status</th><th>Time used</th><th>Pastes</th><th>Left page</th><th></th></tr>
+                <tr><th>Candidate</th><th>Status</th><th>Score</th><th>Time used</th><th>Pastes</th><th>Left page</th><th></th></tr>
               </thead>
               <tbody>
-                {rows.length === 0 && <tr><td colSpan="6" style={{opacity:.6}}>No candidates yet. Add them to bp_assessment_candidates in Supabase.</td></tr>}
+                {rows.length === 0 && <tr><td colSpan="7" style={{opacity:.6}}>No candidates yet. Add them to bp_assessment_candidates in Supabase.</td></tr>}
                 {rows.map(({ cand, row }) => {
                   const st = bpAssessStatus(row, now);
                   const log = (row && row.integrity_log) || {};
@@ -3777,6 +3960,7 @@ function AdminAssessments() {
                     <tr key={cand.code} onClick={() => setSelected(open ? null : cand.code)} style={{cursor:"pointer"}}>
                       <td><div className="bp-tbl-title">{cand.name}</div><div className="bp-tbl-sub">{cand.code}</div></td>
                       <td><span className={"bp-pill " + st.cls}>{st.label}</span></td>
+                      <td>{row ? <ScoreBadge saved={scoreByCode[cand.code]}/> : <span style={{opacity:.4}}>—</span>}</td>
                       <td>{row && row.time_taken_secs ? Math.round(row.time_taken_secs / 60) + " min" : "—"}</td>
                       <td>{row ? `${log.paste_count || 0} (${(log.paste_chars || 0).toLocaleString()} chars)` : "—"}</td>
                       <td>{row ? `${log.away_count || 0}× · ${bpMMSS(log.away_secs || 0)}` : "—"}</td>
@@ -3789,7 +3973,8 @@ function AdminAssessments() {
           </GlassCard>
         </FadeIn>
 
-        {sel && <AssessDetail cand={sel.cand} row={sel.row}/>}
+        {sel && <AssessDetail key={sel.cand.code} cand={sel.cand} row={sel.row} rubric={data.rubric}
+                              saved={scoreByCode[sel.cand.code]} onSaved={onSaved} scoringError={data.scoringError}/>}
       </>)}
     </div>
   );

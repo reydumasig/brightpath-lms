@@ -1109,6 +1109,18 @@ const BPBackend = {
     }));
   },
 
+  // Admin: applicant assessment candidates + results (admin-only by database policy)
+  async fetchAssessments() {
+    const [cand, res] = await Promise.all([
+      _sb.from("bp_assessment_candidates").select("code, name"),
+      _sb.from("bp_assessment_results").select("*"),
+    ]);
+    if (cand.error || res.error) {
+      throw new Error((cand.error || res.error).message);
+    }
+    return { candidates: cand.data || [], results: res.data || [] };
+  },
+
   // Admin: fetch all learners' progress keyed by email
   async fetchAllProgress() {
     const { data, error } = await _sb.from("bp_progress").select("*");
@@ -1737,6 +1749,7 @@ function Header({ role, currentUser, view, onNavigate, onLogout, adminTab, setAd
     { id: "learners",     label: "Learners" },
     { id: "progress",     label: "Progress" },
     { id: "certificates", label: "Certificates" },
+    { id: "assessments",  label: "Assessments" },
     { id: "faq",          label: "FAQ" },
   ];
   const isAdminView = role === "admin" && adminMode !== "learner";
@@ -3000,6 +3013,7 @@ function AdminScreen({ tab, modules, setModules, learners, setLearners, progress
   if (tab === "learners")      return <AdminLearners learners={learners} setLearners={setLearners} progressByLearner={progressByLearner} setProgressByLearner={setProgressByLearner} modules={modules}/>;
   if (tab === "progress")      return <AdminProgress learners={learners} modules={modules} progressByLearner={progressByLearner}/>;
   if (tab === "certificates")  return <AdminCertificates learners={learners} modules={modules} progressByLearner={progressByLearner}/>;
+  if (tab === "assessments")   return <AdminAssessments/>;
   return null;
 }
 
@@ -3549,6 +3563,234 @@ function AdminProgress({ learners, modules, progressByLearner }) {
           </table>
         </GlassCard>
       </FadeIn>
+    </div>
+  );
+}
+
+// ─── Applicant assessments tab ─────────────────────────────────────────────
+// Candidate answers are untrusted text: render only as plain text (React escapes it).
+const BP_ASSESS_PARTS = [
+  { title: "Part 1 — Offboarding checklist", fields: [["part1_response", "Checklist"]] },
+  { title: "Part 2 — License reconciliation", fields: [
+      ["part2_issues", "Findings (a), (b), (c)"],
+      ["part2_method", "Method"],
+      ["part2_assumptions", "Assumptions and things to verify"] ] },
+  { title: "Part 3 — Written escalation", fields: [
+      ["part3_message", "Message to manager"],
+      ["part3_actions", "What they did first, and deliberately did not do"] ] },
+  { title: "Tools and time", fields: [["tools_used", "Tools used and minutes spent"]] },
+];
+const BP_ASSESS_FIELD_LABEL = {
+  part1_response: "Part 1", part2_issues: "Part 2 findings", part2_method: "Part 2 method",
+  part2_assumptions: "Part 2 assumptions", part3_message: "Part 3 message",
+  part3_actions: "Part 3 notes", tools_used: "Tools",
+};
+
+function bpMMSS(secs) {
+  const s = Math.max(0, Math.round(secs || 0));
+  return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+}
+function bpFmtDate(iso) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+}
+function bpAssessStatus(row, now) {
+  if (!row || !row.started_at) return { key: "none", label: "Not started", cls: "bp-pill-neutral" };
+  const log = row.integrity_log || {};
+  if (row.submitted_at) {
+    const timer = log.submitted_by === "timer" || (!log.submitted_by && row.time_taken_secs >= 3600);
+    return timer ? { key: "timer", label: "Time ran out", cls: "bp-pill-accent" }
+                 : { key: "done",  label: "Submitted",    cls: "bp-pill-success" };
+  }
+  const left = 3600 - (now - new Date(row.started_at).getTime()) / 1000;
+  if (left > 0) return { key: "live", label: Math.ceil(left / 60) + " min left", cls: "bp-pill-accent" };
+  return { key: "timer", label: "Time ran out", cls: "bp-pill-accent" };
+}
+
+function AssessTimeline({ log }) {
+  const pts = (log.timeline || []).filter(p => typeof p.t === "number");
+  if (pts.length < 2) return <p className="bp-tbl-sub">Not enough autosaves yet to draw a timeline.</p>;
+  const W = 600, H = 120, P = 6;
+  const maxT = 3600, maxC = Math.max(1, ...pts.map(p => p.chars || 0));
+  const x = t => P + (Math.min(t, maxT) / maxT) * (W - 2 * P);
+  const y = c => H - P - ((c || 0) / maxC) * (H - 2 * P);
+  const line = [{ t: 0, chars: 0 }, ...pts].map(p => x(p.t) + "," + y(p.chars)).join(" ");
+  return (
+    <div>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} role="img"
+           aria-label="Total characters written over the 60 minutes, with paste and time-away markers">
+        <rect x="0" y="0" width={W} height={H} rx="8" fill="rgba(255,255,255,.04)"/>
+        {(log.away || []).map((a, i) => (
+          <rect key={"a" + i} x={x(a.t)} y={P} height={H - 2 * P}
+                width={Math.max(2, x(a.t + a.secs) - x(a.t))} fill="rgba(244,114,114,.22)"/>
+        ))}
+        <polyline points={line} fill="none" stroke="#67e8c0" strokeWidth="2"/>
+        {(log.pastes || []).map((p, i) => (
+          <line key={"p" + i} x1={x(p.t)} x2={x(p.t)} y1={P} y2={H - P} stroke="var(--bp-accent)" strokeWidth="2"/>
+        ))}
+      </svg>
+      <div className="bp-tbl-sub" style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
+        <span>0 min</span>
+        <span><span style={{color:"#67e8c0"}}>━</span> text written ({maxC.toLocaleString()} chars max) · <span style={{color:"var(--bp-accent)"}}>│</span> paste · <span style={{color:"#f99a9a"}}>█</span> away from page</span>
+        <span>60 min</span>
+      </div>
+    </div>
+  );
+}
+
+function AssessDetail({ cand, row }) {
+  const log = (row && row.integrity_log) || {};
+  const bigPastes = (log.pastes || []).filter(p => p.chars >= 200);
+  const longAway  = (log.away || []).filter(a => a.secs >= 30);
+  return (
+    <GlassCard padding={28} style={{marginTop:18}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",flexWrap:"wrap",gap:12}}>
+        <div>
+          <div className="bp-welcome-eyebrow">Candidate</div>
+          <h2 className="bp-h-display" style={{fontSize:28,margin:"4px 0"}}>{cand.name}</h2>
+          <div className="bp-tbl-sub">Code {cand.code} · started {bpFmtDate(row && row.started_at)} · submitted {bpFmtDate(row && row.submitted_at)}{row && row.time_taken_secs ? " · " + Math.round(row.time_taken_secs / 60) + " min" : ""}</div>
+        </div>
+      </div>
+
+      {!row ? <p style={{marginTop:18}}>This candidate hasn't entered their code yet.</p> : (<>
+        <h3 style={{margin:"24px 0 8px",fontSize:15}}>Activity signals</h3>
+        <p className="bp-tbl-sub" style={{marginBottom:10}}>Signals for the follow-up conversation, not proof. AI use is allowed if the candidate lists it under Tools.</p>
+        <div className="bp-stats">
+          <Stat label="Pastes" value={log.paste_count || 0}/>
+          <Stat label="Characters pasted" value={(log.paste_chars || 0).toLocaleString()}/>
+          <Stat label="Times left page" value={log.away_count || 0}/>
+          <Stat label="Time away" value={bpMMSS(log.away_secs || 0)}/>
+        </div>
+        {(log.resumes || []).length > 0 && (
+          <p className="bp-tbl-sub" style={{marginTop:8}}>Reopened the page {log.resumes.length} time(s), at {log.resumes.map(r => bpMMSS(r.t)).join(", ")}.</p>
+        )}
+        <div style={{marginTop:14}}><AssessTimeline log={log}/></div>
+        {(bigPastes.length > 0 || longAway.length > 0) && (
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:16,marginTop:14}}>
+            {bigPastes.length > 0 && (
+              <div>
+                <div className="bp-tbl-title">Large pastes (200+ characters)</div>
+                <ul className="bp-tbl-sub" style={{margin:"6px 0 0",paddingLeft:18}}>
+                  {bigPastes.map((p, i) => <li key={i}>{bpMMSS(p.t)} — {p.chars.toLocaleString()} chars into {BP_ASSESS_FIELD_LABEL[p.field] || p.field}</li>)}
+                </ul>
+              </div>
+            )}
+            {longAway.length > 0 && (
+              <div>
+                <div className="bp-tbl-title">Away 30 seconds or more</div>
+                <ul className="bp-tbl-sub" style={{margin:"6px 0 0",paddingLeft:18}}>
+                  {longAway.map((a, i) => <li key={i}>{bpMMSS(a.t)} — {bpMMSS(a.secs)} ({a.kind === "tab_hidden" ? "switched tab" : "other window"})</li>)}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
+        {BP_ASSESS_PARTS.map(part => (
+          <div key={part.title} style={{marginTop:28}}>
+            <h3 style={{margin:"0 0 10px",fontSize:15}}>{part.title}</h3>
+            {part.fields.map(([key, label]) => (
+              <div key={key} style={{marginBottom:14}}>
+                <div className="bp-welcome-eyebrow" style={{marginBottom:6}}>{label}</div>
+                <div style={{whiteSpace:"pre-wrap",wordBreak:"break-word",fontSize:14,lineHeight:1.6,
+                             background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",
+                             borderRadius:10,padding:"12px 14px"}}>
+                  {row[key] ? row[key] : <span style={{opacity:.45}}>No answer</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </>)}
+    </GlassCard>
+  );
+}
+
+function AdminAssessments() {
+  const [data, setData]       = useState(null);
+  const [err, setErr]         = useState("");
+  const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState(null);
+  const [now, setNow]         = useState(Date.now());
+
+  function load() {
+    setLoading(true); setErr("");
+    BPBackend.fetchAssessments()
+      .then(d => { setData(d); setNow(Date.now()); })
+      .catch(e => setErr(e.message || "Could not load assessments."))
+      .finally(() => setLoading(false));
+  }
+  useEffect(() => { load(); }, []);
+
+  const rows = useMemo(() => {
+    if (!data) return [];
+    const byCode = {};
+    data.results.forEach(r => { byCode[r.assessment_code] = r; });
+    const codes = new Set(data.candidates.map(c => c.code));
+    const list = data.candidates.map(c => ({ cand: c, row: byCode[c.code] || null }));
+    data.results.filter(r => !codes.has(r.assessment_code))
+      .forEach(r => list.push({ cand: { code: r.assessment_code, name: r.candidate_name }, row: r }));
+    return list.sort((a, b) => a.cand.name.localeCompare(b.cand.name));
+  }, [data]);
+
+  const counts = rows.reduce((acc, r) => { acc[bpAssessStatus(r.row, now).key] = (acc[bpAssessStatus(r.row, now).key] || 0) + 1; return acc; }, {});
+  const sel = rows.find(r => r.cand.code === selected);
+
+  return (
+    <div className="bp-page">
+      <FadeIn delay={60}>
+        <div className="bp-admin-head">
+          <div>
+            <div className="bp-welcome-eyebrow">Hiring</div>
+            <h1 className="bp-h-display">Applicant Assessments</h1>
+            <p className="bp-admin-sub">IT Operations work sample. Score each submission against the confidential answer key.</p>
+          </div>
+          <GlassButton variant="ghost" size="md" onClick={load} disabled={loading}>{loading ? "Refreshing…" : "Refresh"}</GlassButton>
+        </div>
+      </FadeIn>
+
+      {err && <GlassCard padding={18}><span style={{color:"#f99a9a"}}>Couldn't load assessments: {err}</span></GlassCard>}
+
+      {data && (<>
+        <FadeIn delay={140}>
+          <div className="bp-stats">
+            <Stat label="Candidates" value={rows.length}/>
+            <Stat label="Submitted" value={(counts.done || 0) + (counts.timer || 0)}/>
+            <Stat label="In progress" value={counts.live || 0}/>
+            <Stat label="Not started" value={counts.none || 0}/>
+          </div>
+        </FadeIn>
+
+        <FadeIn delay={220}>
+          <GlassCard padding={0} className="bp-table-card">
+            <table className="bp-table">
+              <thead>
+                <tr><th>Candidate</th><th>Status</th><th>Time used</th><th>Pastes</th><th>Left page</th><th></th></tr>
+              </thead>
+              <tbody>
+                {rows.length === 0 && <tr><td colSpan="6" style={{opacity:.6}}>No candidates yet. Add them to bp_assessment_candidates in Supabase.</td></tr>}
+                {rows.map(({ cand, row }) => {
+                  const st = bpAssessStatus(row, now);
+                  const log = (row && row.integrity_log) || {};
+                  const open = selected === cand.code;
+                  return (
+                    <tr key={cand.code} onClick={() => setSelected(open ? null : cand.code)} style={{cursor:"pointer"}}>
+                      <td><div className="bp-tbl-title">{cand.name}</div><div className="bp-tbl-sub">{cand.code}</div></td>
+                      <td><span className={"bp-pill " + st.cls}>{st.label}</span></td>
+                      <td>{row && row.time_taken_secs ? Math.round(row.time_taken_secs / 60) + " min" : "—"}</td>
+                      <td>{row ? `${log.paste_count || 0} (${(log.paste_chars || 0).toLocaleString()} chars)` : "—"}</td>
+                      <td>{row ? `${log.away_count || 0}× · ${bpMMSS(log.away_secs || 0)}` : "—"}</td>
+                      <td style={{textAlign:"right"}}><span className="bp-tbl-sub">{open ? "Hide ▲" : "View ▼"}</span></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </GlassCard>
+        </FadeIn>
+
+        {sel && <AssessDetail cand={sel.cand} row={sel.row}/>}
+      </>)}
     </div>
   );
 }
